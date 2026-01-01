@@ -17,12 +17,13 @@
         "NSMicrophoneUsageDescription": "Ứng dụng không ghi âm, chỉ dùng để quay video"
       }
     },
-
     "android": {
-      "package": "com.doibncm2003.locketwan",
+      "package": "com.quang2k6.locketwan",
       "permissions": [
         "CAMERA",
-        "RECORD_AUDIO"
+        "RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -64,10 +65,14 @@
       "reactCompiler": true
     },
     "extra": {
+      "BASE_API_URL": "https://apilocketwan.traidep.site",
+      "BASE_API_URL_DB": "https://api4locketwan.antiviet.click",
+      "BASE_API_URL_WS": "https://wslocketwan.wibu.life",
       "router": {},
       "eas": {
-        "projectId": "0ce53027-1504-4d47-96c8-d41d1af74221"
+        "projectId": "1d35bd34-381a-4ae8-8185-efb493676bc7"
       }
-    }
+    },
+    "owner": "wantech"
   }
 }

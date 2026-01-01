@@ -1,9 +1,11 @@
 import React, { useRef } from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import PagerView from "react-native-pager-view";
-import ProfileScreen from "./ProfileTab/index";
+// import ProfileScreen from "./ProfileTab/index";
+import PostCaption from "./PostCaption"
 import TabTwoScreen from "./MessageTab";
 import HomePage from "./HomeTab";
+// import Login from "./Login"
 
 const { width, height } = Dimensions.get("window");
 
@@ -32,7 +34,7 @@ export default function HomeScreen() {
       ref={pagerRef}
     >
       <View key="profile">
-        <ProfileScreen goToPage={goToPage} />
+        <PostCaption goToPage={goToPage} />
       </View>
       <View key="home">
         <HomePage goToPage={goToPage} />

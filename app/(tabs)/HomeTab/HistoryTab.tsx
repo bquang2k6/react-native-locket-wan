@@ -1,4 +1,6 @@
 import React from 'react';
+import FeatherIcon from 'react-native-vector-icons/Feather';
+import MaterialIcon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {
   View,
   Text,
@@ -10,6 +12,7 @@ import {
   Dimensions,
   Modal,
   FlatList,
+  Pressable,
 } from 'react-native';
 // import { Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -18,7 +21,7 @@ import SelectionHeaderFriend from '../../../components/ui/SelectionHeaderFriend'
 
 const { width, height } = Dimensions.get('window');
 
-const BottomHomeScreen = () => {
+const BottomHomeScreen = ({ goToPage }: { goToPage: (page: string) => void }) => {
   // Mock states for UI demonstration
   const isBottomOpen = true;
   const loadingServer = false;
@@ -260,17 +263,17 @@ const BottomHomeScreen = () => {
       {/* Bottom navigation bar */}
       <View style={styles.bottomBar}>
         <TouchableOpacity style={styles.bottomButton}>
-          <Text style={styles.bottomButtonIcon}>⊞</Text>
+          <MaterialIcon name="view-grid" size={24} color="#000" style={styles.bottomButtonIcon} />
         </TouchableOpacity>
 
-        <View style={styles.centerButtonContainer}>
+        <Pressable onPress={() => goToPage("main")} style={styles.centerButtonContainer}>
           <View style={styles.centerButtonOuter} />
           <View style={styles.centerButtonInner} />
-        </View>
+        </Pressable>
 
         {true && (
           <TouchableOpacity style={styles.deleteButton}>
-            <Text style={styles.deleteButtonIcon}>🗑</Text>
+            <FeatherIcon name="trash-2" size={24} color="#fff" style={styles.deleteButtonIcon} />
           </TouchableOpacity>
         )}
       </View>
@@ -627,14 +630,15 @@ const styles = StyleSheet.create({
   // sọt rác
   deleteButton: {
     padding: 4,
-    borderRadius: 12,
-    borderWidth: 3,
+    borderRadius: 20,
+    borderWidth: 2,
     borderColor: '#ffffffff',
     marginBottom: 31,
     marginRight: 10,
   },
   deleteButtonIcon: {
     fontSize: 20,
+
   },
 });
 

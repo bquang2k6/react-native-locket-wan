@@ -1,4 +1,4 @@
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { CameraView, CameraType, useCameraPermissions, useMicrophonePermissions } from "expo-camera";
 import { useState, useRef, useEffect } from "react";
 import {
   StyleSheet,
@@ -38,12 +38,15 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
 
   useEffect(() => {
     if (isRecording) {
+      // Reset về giá trị đầu
       strokeDashoffset.value = 400;
+      // Chạy animation
       strokeDashoffset.value = withTiming(0, {
         duration: duration,
         easing: Easing.linear,
       });
     } else {
+      // Khi dừng, reset ngay lập tức
       strokeDashoffset.value = 400;
     }
   }, [isRecording, duration]);
@@ -65,16 +68,13 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
           <Rect x="0" y="0" width="100" height="100" rx="15" ry="15" />
         </ClipPath>
       </Defs>
-
-      
-      {/* Border chạy xung quanh */}
       <AnimatedPath
         clipPath="url(#roundedClip)"
         d="M15,0 H85 A15,15 0 0 1 100,15 V85 A15,15 0 0 1 85,100 H15 A15,15 0 0 1 0,85 V15 A15,15 0 0 1 15,0 Z"
         stroke="#00ccff"
         strokeWidth="3"
         fill="none"
-        strokeLinecap="butt"
+        strokeLinecap="round"
         strokeDasharray="400"
         animatedProps={animatedProps}
       />
@@ -94,7 +94,21 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
   const recordStartTimeRef = useRef<number>(0);
   const isStoppingRef = useRef(false);
 
+  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
+  const [micPermission, requestMicPermission] = useMicrophonePermissions();
+
+
   const MAX_VIDEO_DURATION = 10000; // 10 giây
+  useEffect(() => {
+    return () => {
+      if (recordTimerRef.current) {
+        clearInterval(recordTimerRef.current);
+      }
+      if (isRecording && cameraRef.current) {
+        cameraRef.current.stopRecording().catch(() => {});
+      }
+    };
+  }, []);
 
   // Hàm bắt đầu quay video
   const startRecording = async () => {
@@ -164,7 +178,7 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
   };
 
   // Kiểm tra quyền camera
-  if (!permission) {
+  if (!cameraPermission || !micPermission) {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#0000ff" />
@@ -172,18 +186,32 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
     );
   }
 
-  if (!permission.granted) {
+  if (!cameraPermission || !micPermission) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (!cameraPermission.granted || !micPermission.granted) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionBox}>
           <Text style={styles.permissionText}>
-            Ứng dụng cần quyền truy cập camera để chụp ảnh
+            Ứng dụng cần quyền Camera quay video/chụp
           </Text>
+
           <Pressable
             style={styles.permissionButton}
-            onPress={requestPermission}
+            onPress={async () => {
+              await requestCameraPermission();
+              await requestMicPermission();
+            }}
           >
-            <Text style={styles.permissionButtonText}>Cấp quyền Camera</Text>
+            <Text style={styles.permissionButtonText}>
+              Cấp quyền
+            </Text>
           </Pressable>
         </View>
       </View>

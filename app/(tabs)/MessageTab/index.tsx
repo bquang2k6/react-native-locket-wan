@@ -67,7 +67,7 @@ export default function ChatListPage() {
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton}>
-            <Text style={styles.backText}>←</Text>
+            <Text style={styles.backText}></Text>
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Tin nhắn</Text>
           <SocketStatus isConnected={isConnected} />
