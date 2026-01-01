@@ -37,6 +37,7 @@ export const checkAndRefreshIdToken = async (): Promise<string | null> => {
   console.log("🔄 Token expired, refreshing...");
 
   try {
+    console.log('🟢 [REFRESH_TOKEN_URL] API_URL:', API_URL.REFRESH_TOKEN_URL.toString());
     const res = await fetch(API_URL.REFRESH_TOKEN_URL.toString(), {
       method: "POST",
       headers: { "Content-Type": "application/json" },

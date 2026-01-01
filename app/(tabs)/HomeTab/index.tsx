@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeHeader from "@/components/ui/headerhome";
 import HistoryTab from "./HistoryTab";
 import MainHomeTab from "./MainHomeTab";
+import Taskbar from "@/components/ui/tasbar";
 
 interface ProfileScreenProps {
   goToPage: (pageKey: string) => void;
@@ -27,6 +28,7 @@ export default function HomePage({ goToPage }: ProfileScreenProps) {
     <View style={styles.homeContainer}>
       {/* Header cố định */}
       <HomeHeader goToPage={goToPage} />
+      <Taskbar goToPage={goToPage} />
 
       {/* Vertical PagerView chiếm phần còn lại */}
       <PagerView

@@ -38,15 +38,12 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
 
   useEffect(() => {
     if (isRecording) {
-      // Reset về giá trị đầu
       strokeDashoffset.value = 400;
-      // Chạy animation
       strokeDashoffset.value = withTiming(0, {
         duration: duration,
         easing: Easing.linear,
       });
     } else {
-      // Khi dừng, reset ngay lập tức
       strokeDashoffset.value = 400;
     }
   }, [isRecording, duration]);
@@ -68,13 +65,16 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
           <Rect x="0" y="0" width="100" height="100" rx="15" ry="15" />
         </ClipPath>
       </Defs>
+
+      
+      {/* Border chạy xung quanh */}
       <AnimatedPath
         clipPath="url(#roundedClip)"
         d="M15,0 H85 A15,15 0 0 1 100,15 V85 A15,15 0 0 1 85,100 H15 A15,15 0 0 1 0,85 V15 A15,15 0 0 1 15,0 Z"
         stroke="#00ccff"
         strokeWidth="3"
         fill="none"
-        strokeLinecap="round"
+        strokeLinecap="butt"
         strokeDasharray="400"
         animatedProps={animatedProps}
       />
@@ -99,16 +99,6 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
 
 
   const MAX_VIDEO_DURATION = 10000; // 10 giây
-  useEffect(() => {
-    return () => {
-      if (recordTimerRef.current) {
-        clearInterval(recordTimerRef.current);
-      }
-      if (isRecording && cameraRef.current) {
-        cameraRef.current.stopRecording().catch(() => {});
-      }
-    };
-  }, []);
 
   // Hàm bắt đầu quay video
   const startRecording = async () => {

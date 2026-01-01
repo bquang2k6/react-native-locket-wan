@@ -15,12 +15,31 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, initializeApiUrl } from '@/hooks/api'; // 🔥 chỉnh lại path cho đúng project bạn
+import { useEffect } from 'react';
+
+
+
 
 const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+    useEffect(() => {
+    const loadRemember = async () => {
+        const remember = await AsyncStorage.getItem('rememberMe');
+        const savedEmail = await AsyncStorage.getItem('rememberEmail');
+
+        if (remember === 'true' && savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+        } else {
+        setRememberMe(false);
+        }
+    };
+
+    loadRemember();
+    }, []);
 
   const handleLogin = async () => {
     console.log('🟢 [Login] Press login');
@@ -66,9 +85,14 @@ const LoginScreen = () => {
         ['user', JSON.stringify(data)],
       ]);
 
-      if (rememberMe) {
-        await AsyncStorage.setItem('rememberMe', 'true');
-      }
+    if (rememberMe) {
+        await AsyncStorage.multiSet([
+            ['rememberMe', 'true'],
+            ['rememberEmail', email],
+        ]);
+    } else {
+        await AsyncStorage.multiRemove(['rememberMe', 'rememberEmail']);
+    }
 
       // 🔍 Verify lại storage
       const verifyToken = await AsyncStorage.getItem('idToken');
