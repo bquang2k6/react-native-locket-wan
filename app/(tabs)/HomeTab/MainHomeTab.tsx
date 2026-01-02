@@ -29,6 +29,7 @@ import { ActionControls } from "./components/ActionControls";
 import { MediaSizeInfo } from "./components/MediaSizeInfo";
 import AutoResizeCaption from "./components/AutoResizeCaption";
 import Streak from "../../../components/Streak";
+import { CustomStudioModal, PostOverlay } from "./components/CustomStudio/CustomStudioModal";
 
 import { uploadMedia } from "@/hooks/services/uploadMedia";
 
@@ -83,7 +84,7 @@ const buildMediaFile = (uri: string, type: "image" | "video") => {
 
 
 // Component BorderProgress với hiệu ứng chạy xung quanh viền
-const BorderProgress = ({ isRecording, duration = 10000 }) => {
+const BorderProgress = ({ isRecording, duration = 10000 }: { isRecording: boolean; duration?: number }) => {
   const strokeDashoffset = useSharedValue(400);
 
   useEffect(() => {
@@ -145,7 +146,11 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordStartTimeRef = useRef<number>(0);
   const isStoppingRef = useRef(false);
-  const [postOverlay, setPostOverlay] = useState<string>("");
+  const [postOverlay, setPostOverlay] = useState<PostOverlay>({
+    type: "default",
+    caption: "",
+  });
+  const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
 
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
@@ -228,7 +233,6 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     try {
       const recordPromise = cameraRef.current.recordAsync({
         maxDuration: MAX_VIDEO_DURATION_SEC,
-        mute: true,
       });
 
       // Backup stop
@@ -239,7 +243,10 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       const video = await recordPromise;
 
       if (video?.uri) {
-        if (video.duration && video.duration * 1000 > MAX_VIDEO_DURATION_MS) {
+        // recordAsync in newer expo-camera versions might not return duration directly in the object
+        // but we can check if it exists or use some other way to validate.
+        const videoDuration = (video as any).duration;
+        if (videoDuration && videoDuration * 1000 > MAX_VIDEO_DURATION_MS) {
           Alert.alert("Video quá dài", `Tối đa ${MAX_VIDEO_DURATION_SEC} giây`);
           return;
         }
@@ -393,6 +400,13 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
 
     setIsSending(true);
 
+    // 4. Check user
+    if (!user) {
+      Alert.alert("Lỗi", "Vui lòng đăng nhập lại");
+      setIsSending(false);
+      return;
+    }
+
     try {
       // 2. Build file
       const file = buildMediaFile(photoUri, mediaType);
@@ -408,7 +422,15 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           file,
         },
         options: {
-          caption: postOverlay || "",
+          type: postOverlay.type || "background",
+          overlay_id: postOverlay.overlay_id || "standard",
+          icon: postOverlay.icon || "",
+          text_color: postOverlay.text_color || "#FFFFFF",
+          color_top: postOverlay.color_top || "",
+          color_bottom: postOverlay.color_bottom || "",
+          audience: "everyone",
+          recipients: [],
+          caption: postOverlay.caption || "",
         },
       };
 
@@ -428,7 +450,15 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           file,
         },
         options: {
-          caption: postOverlay || "",
+          type: postOverlay.type || "background",
+          overlay_id: postOverlay.overlay_id || "standard",
+          icon: postOverlay.icon || "",
+          text_color: postOverlay.text_color || "#FFFFFF",
+          color_top: postOverlay.color_top || "",
+          color_bottom: postOverlay.color_bottom || "",
+          audience: "everyone",
+          recipients: [],
+          caption: postOverlay.caption || "",
         },
       });
 
@@ -445,10 +475,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   };
 
   const handleCustomAction = () => {
-    Alert.alert("Tùy chỉnh", "Chức năng chỉnh sửa", [
-      { text: "Hủy", style: "cancel" },
-      { text: "Chỉnh sửa", onPress: () => console.log("Mở editor") },
-    ]);
+    setIsCustomStudioOpen(true);
   };
 
   // =============================================
@@ -564,6 +591,14 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           <Octicons name="chevron-down" size={24} color="white" />
         </Pressable>
       </View>
+
+      {/* Custom Studio Modal */}
+      <CustomStudioModal
+        isVisible={isCustomStudioOpen}
+        onClose={() => setIsCustomStudioOpen(false)}
+        postOverlay={postOverlay}
+        setPostOverlay={setPostOverlay}
+      />
     </View>
   );
 }

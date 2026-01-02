@@ -148,7 +148,7 @@ const AutoResizeCaption: React.FC<AutoResizeCaptionProps> = ({
   useEffect(() => {
     const textLength = (postOverlay.caption || placeholder).length;
     const estimatedWidth = Math.min(
-      Math.max(textLength * 10 + 80, defaultImageIconWidth),
+      Math.max(textLength * 4 + 40, defaultImageIconWidth),
       SCREEN_WIDTH * 0.9
     );
     setContainerWidth(estimatedWidth);

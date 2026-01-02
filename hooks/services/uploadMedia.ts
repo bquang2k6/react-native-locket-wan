@@ -123,23 +123,15 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
       ? ((rawCaption as any).caption || "")
       : (rawCaption || "");
 
-    // Exact options from user sample
+    // Final options for JSON stringify
     const finalOptions: any = {
-      caption: finalCaption,
-      overlay_id: "standard",
-      type: "default",
-      icon: "",
-      text_color: "#FFFFFF",
-      color_top: "",
-      color_bottom: "",
-      audience: "all",
-      recipients: [],
+      ...updatedOptions,
       update_streak_for_yyyymmdd: todayInt,
     };
 
     formData.append("options", JSON.stringify(finalOptions));
     formData.append("caption", finalCaption);
-    formData.append("plan_id", "pro_plus");
+    formData.append("plan_id", plan_id);
 
     // 5. Add media file (MUST be the last field)
     const fileToUpload = {
