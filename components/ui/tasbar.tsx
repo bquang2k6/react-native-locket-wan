@@ -69,7 +69,7 @@ export default function LiquidGlassTaskbar({ goToPage }: TaskbarProps) {
   const menuItems = [
     { id: 'home', label: 'Trang Chủ', icon: Send, action: () => goToPage('main') },
     { id: 'history', label: 'Lịch sử', icon: History, action: () => goToPage('history') },
-    // { id: 'chat', label: 'Chat', icon: MessageCircle, action: () => goToPage('messages') },
+    { id: 'chat', label: 'Chat', icon: MessageCircle, action: () => goToPage('messages') },
     { id: 'RollCall', label: 'Roll Call', icon: MegaphoneIcon, type: 'rollcall' }
   ];
 

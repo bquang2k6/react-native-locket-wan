@@ -379,6 +379,10 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     setPhotoUri(null);
     setMediaType(null);
     setMediaSizeInMB(null);
+    setPostOverlay({
+      type: "default",
+      caption: "",
+    });
   };
 
   const handleSendPhoto = async () => {
@@ -515,6 +519,9 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   // =============================================
   return (
     <View style={styles.container}>
+      <View style={styles.streakWrapper}>
+        <Streak refresh={streakRefresh} />
+      </View>
 
       {/* Camera hoặc ảnh/video đã chụp */}
       <View style={styles.cameraContainer}>
@@ -559,7 +566,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           />
         )}
       </View>
-      <Streak refresh={streakRefresh} />
+      {/* <Streak refresh={streakRefresh} /> */}
 
       {/* Media Size Info */}
       <MediaSizeInfo
@@ -684,5 +691,12 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 20,
     fontWeight: "600",
+  },
+  streakWrapper: {
+    position: "absolute",
+    top: 35,        // 👈 chỉnh cao thấp tại đây
+    alignSelf: "left",
+    zIndex: 100,
+    marginLeft: 60,
   },
 });
