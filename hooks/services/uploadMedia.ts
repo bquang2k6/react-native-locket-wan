@@ -117,9 +117,15 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
     formData.append("userId", activeUserId);
     formData.append("idToken", activeIdToken);
 
+    // FIX: Extract caption strictly as a string to avoid nested {"caption":{"caption":"..."}} objects
+    const rawCaption = options.caption;
+    const finalCaption = typeof rawCaption === 'object' && rawCaption !== null
+      ? ((rawCaption as any).caption || "")
+      : (rawCaption || "");
+
     // Exact options from user sample
     const finalOptions: any = {
-      caption: options.caption || "",
+      caption: finalCaption,
       overlay_id: "standard",
       type: "default",
       icon: "",
@@ -128,11 +134,11 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
       color_bottom: "",
       audience: "all",
       recipients: [],
-      update_streak_for_yyyymmdd: todayInt, // Always include as per working sample
+      update_streak_for_yyyymmdd: todayInt,
     };
 
     formData.append("options", JSON.stringify(finalOptions));
-    formData.append("caption", finalOptions.caption);
+    formData.append("caption", finalCaption);
     formData.append("plan_id", "pro_plus");
 
     // 5. Add media file (MUST be the last field)
@@ -144,9 +150,9 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
 
     formData.append(fileType === "image" ? "images" : "videos", fileToUpload);
 
-    // 6. Execute Request via axios (exactly like principle)
+    // 6. Execute Request via axios (proven working for connectivity)
     const url = API_URL.UPLOAD_MEDIA_URL.toString();
-    console.log("🚀 Executing POST request to:", url);
+    console.log("🚀 Executing POST request (Axios) to:", url);
 
     const response = await axios.post(url, formData, {
       headers: {
@@ -162,6 +168,7 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
     // 7. Success check
     const locketRes = resData?.data?.result;
     const locketStatus = locketRes?.status;
+
     if (response.status === 200 && (locketStatus === 200 || !locketStatus)) {
       console.log("✅ Upload successful!");
       if (lastUpdated !== todayInt) {
