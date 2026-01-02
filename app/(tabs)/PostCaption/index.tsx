@@ -64,6 +64,28 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
   const [isDownloaded, setIsDownloaded] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const { user_info, options, content, stats, created_at } = post;
+  const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+    useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const raw = await AsyncStorage.getItem('user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // console.log('✅ Loaded user in PostsScreen:', parsed);
+          setUser(parsed);
+        } else {
+          console.log('❌ No user in AsyncStorage');
+        }
+      } catch (e) {
+        console.log('❌ Load user error:', e);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   useEffect(() => {
     checkIfDownloaded();
@@ -161,6 +183,13 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
                   user_info.plan !== '' && 
                   user_info.plan.toLowerCase() !== 'no plan' && 
                   user_info.plan.toLowerCase() !== 'none';
+  if (userLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.postCard}>
@@ -317,15 +346,38 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
 };
 
 // Main Screen Component
-const PostsScreen = ({ user, onClose }) => {
-    console.log("currentUser:", user);
-  console.log("currentUser.username:", user?.username);
+const PostsScreen = () => {
+  const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+    // console.log("currentUser:", user);
+  // console.log("currentUser.username:", user?.username);
   const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const scrollRef = React.useRef(null);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const raw = await AsyncStorage.getItem('user');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          // console.log('✅ Loaded user in PostsScreen:', parsed);
+          setUser(parsed);
+        } else {
+          console.log('❌ No user in AsyncStorage');
+        }
+      } catch (e) {
+        console.log('❌ Load user error:', e);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    loadUser();
+  }, []);
 
   const fetchPosts = async () => {
     try {
@@ -389,10 +441,14 @@ const PostsScreen = ({ user, onClose }) => {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={styles.userSection}>
-            <Text style={styles.userName}>{user?.displayName || 'Name'}</Text>
+            <Text style={styles.userName}>
+            {user?.displayName || 'Anonymous'}
+          </Text>
             <TouchableOpacity onPress={openProfile}>
               <View style={styles.usernameContainer}>
-                <Text style={styles.usernameLink}>@{user?.username}</Text>
+                <Text style={styles.usernameLink}>
+                  @{user?.username || 'unknown'}
+                </Text>
                 <LinkIcon size={16} color="#3b82f6" />
               </View>
             </TouchableOpacity>
@@ -406,17 +462,18 @@ const PostsScreen = ({ user, onClose }) => {
                 style={styles.avatarLoader}
               />
             )}
+
             <Image
-              source={{ uri: user?.profilePicture || '/prvlocket.png' }}
+              source={
+                user?.profilePicture
+                  ? { uri: user.profilePicture }
+                  : require('@/assets/images/default-profile.png') // fallback local
+              }
               style={styles.avatar}
               onLoad={() => setImageLoaded(true)}
             />
           </View>
         </View>
-
-        <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-          <ChevronRight size={32} color="#000" />
-        </TouchableOpacity>
       </View>
 
       {/* Posts List */}
@@ -541,8 +598,8 @@ const styles = StyleSheet.create({
     marginRight: 4,
   },
   avatarWrapper: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: 36,
     borderWidth: 2,
     borderColor: '#fbbf24',

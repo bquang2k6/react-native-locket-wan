@@ -11,7 +11,7 @@ export function useCheckAuth() {
 
     try {
       const userStr = await AsyncStorage.getItem('user');
-      console.log('🧪 [Auth] raw user:', userStr);
+      // console.log('🧪 [Auth] raw user:', userStr);
 
       if (!userStr) {
         setIsAuth(false);

@@ -16,13 +16,13 @@ export const checkAndRefreshIdToken = async (): Promise<string | null> => {
     "tokenExpiration",
   ]).then(entries => entries.map(e => e[1]));
 
-  if (!idToken || !refreshToken || !tokenExpiration) {
-    console.warn("❌ [Auth] Missing token info");
+  if (!idToken || !refreshToken) {
+    console.warn("❌ [Auth] Missing idToken or refreshToken");
     return null;
   }
 
-  const expiresAt = Number(tokenExpiration);
-  const isExpired = Date.now() >= expiresAt - FIVE_MINUTES;
+  const expiresAt = tokenExpiration ? Number(tokenExpiration) : 0;
+  const isExpired = !tokenExpiration || Date.now() >= expiresAt - FIVE_MINUTES;
 
   console.log("🕒 Token expires at:", new Date(expiresAt).toLocaleString());
   console.log("⚠️ Is token expired or near expiry?", isExpired);
@@ -49,23 +49,42 @@ export const checkAndRefreshIdToken = async (): Promise<string | null> => {
       return null;
     }
 
-    const data = await res.json();
+    const resData = await res.json();
 
-    if (!data.idToken) {
-      console.error("❌ No idToken returned from refresh");
+    // Proxy returns { success: true, data: { id_token: "...", ... } }
+    const freshToken = resData.idToken || resData.data?.id_token || resData.data?.idToken;
+
+    if (!freshToken) {
+      console.error("❌ No idToken returned from refresh. Response:", JSON.stringify(resData));
       return null;
     }
 
     const newExpiration = Date.now() + 3600 * 1000;
+    const newRefreshToken = resData.refreshToken || resData.data?.refresh_token || refreshToken;
 
+    // Update individual keys
     await AsyncStorage.multiSet([
-      ["idToken", data.idToken],
+      ["idToken", freshToken],
       ["tokenExpiration", String(newExpiration)],
-      ...(data.refreshToken ? [["refreshToken", data.refreshToken]] : []),
+      ["refreshToken", newRefreshToken],
     ]);
 
-    console.log("✅ Token refreshed successfully");
-    return data.idToken;
+    // Update the unified 'user' object to keep everything in sync
+    try {
+      const userStr = await AsyncStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        user.idToken = freshToken;
+        user.refreshToken = newRefreshToken;
+        await AsyncStorage.setItem("user", JSON.stringify(user));
+        console.log("✅ Unified 'user' object updated");
+      }
+    } catch (e) {
+      console.warn("⚠️ Failed to update unified user object:", e);
+    }
+
+    console.log("✅ Token refreshed successfully. New token ends with:", freshToken.slice(-10));
+    return freshToken;
   } catch (err) {
     console.error("❌ Exception during refresh:", err);
     return null;

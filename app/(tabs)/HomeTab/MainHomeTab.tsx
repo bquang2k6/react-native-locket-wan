@@ -10,12 +10,9 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import {
-  FontAwesome,
-  MaterialIcons,
-  Entypo,
-  Octicons,
-} from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Octicons } from "@expo/vector-icons";
+import * as FileSystem from "expo-file-system/legacy";
 import Svg, { Path, Defs, ClipPath, Rect } from "react-native-svg";
 import Animated, {
   useSharedValue,
@@ -24,13 +21,66 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
+import { Video, ResizeMode } from "expo-av";
+
+
+// Import components
+import { ActionControls } from "./components/ActionControls";
+import { MediaSizeInfo } from "./components/MediaSizeInfo";
+import AutoResizeCaption from "./components/AutoResizeCaption";
+import Streak from "../../../components/Streak";
+
+import { uploadMedia } from "@/hooks/services/uploadMedia";
 
 const { width } = Dimensions.get("window");
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-interface ProfileScreenProps {
+
+interface MainHomeTabProps {
   goToPage: (pageKey: string) => void;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+//upload
+const buildMediaFile = (uri: string, type: "image" | "video") => {
+  const fileExt = type === "image" ? "jpg" : "mp4";
+
+  return {
+    uri,
+    name: `media_${Date.now()}.${fileExt}`,
+    type: type === "image" ? "image/jpeg" : "video/mp4",
+  } as any;
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Component BorderProgress với hiệu ứng chạy xung quanh viền
 const BorderProgress = ({ isRecording, duration = 10000 }) => {
@@ -66,8 +116,6 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
         </ClipPath>
       </Defs>
 
-      
-      {/* Border chạy xung quanh */}
       <AnimatedPath
         clipPath="url(#roundedClip)"
         d="M15,0 H85 A15,15 0 0 1 100,15 V85 A15,15 0 0 1 85,100 H15 A15,15 0 0 1 0,85 V15 A15,15 0 0 1 15,0 Z"
@@ -82,70 +130,130 @@ const BorderProgress = ({ isRecording, duration = 10000 }) => {
   );
 };
 
-export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
+export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
+  // Camera states
   const [facing, setFacing] = useState<CameraType>("front");
-  const [permission, requestPermission] = useCameraPermissions();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [mediaSizeInMB, setMediaSizeInMB] = useState<number | null>(null);
+  const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordStartTimeRef = useRef<number>(0);
   const isStoppingRef = useRef(false);
+  const [postOverlay, setPostOverlay] = useState<string>("");
+
 
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [micPermission, requestMicPermission] = useMicrophonePermissions();
+  // Đảm bảo không truyền tham số vào usePermissions để tránh xin quyền AUDIO không cần thiết
+  // const [mediaLibraryPermission, requestMediaLibraryPermission] = MediaLibrary.usePermissions();
 
+  // User plan configuration (giả lập - thay bằng data thật của bạn)
+  const userPlan = {
+    max_image_size: 5, // MB
+    max_video_size: 10, // MB
+  };
+  const MAX_VIDEO_DURATION_SEC = 10;
+  const MAX_VIDEO_DURATION_MS = MAX_VIDEO_DURATION_SEC * 1000;
 
   const MAX_VIDEO_DURATION = 10000; // 10 giây
+  // tính size ảnh/video
+  const getFileSizeMB = async (uri: string): Promise<number> => {
+    try {
+      const fileInfo = await FileSystem.getInfoAsync(uri);
+      if (!fileInfo.exists || !fileInfo.size) return 0;
 
-  // Hàm bắt đầu quay video
+      // bytes → MB
+      return Number((fileInfo.size / (1024 * 1024)).toFixed(2));
+    } catch (e) {
+      console.warn("Không lấy được size file:", e);
+      return 0;
+    }
+  };
+
+
+
+  const [user, setUser] = useState<{
+    idToken: string;
+    localId: string;
+  } | null>(null);
+
+
+
+
+
+
+
+
+
+
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem("user");
+        if (userStr) {
+          const userData = JSON.parse(userStr);
+          setUser(userData);
+          console.log("👤 User loaded in MainHomeTab:", userData.localId);
+        }
+
+        const planStr = await AsyncStorage.getItem("userPlan");
+        if (planStr) {
+          console.log("💳 User plan loaded:", JSON.parse(planStr).plan_id);
+        } else {
+          console.log("💳 No user plan found, using default");
+        }
+      } catch (e) {
+        console.error("Failed to load user data from AsyncStorage:", e);
+      }
+    };
+    fetchUserData();
+  }, []);
+
+  // =============================================
+  // VIDEO RECORDING FUNCTIONS
+  // =============================================
   const startRecording = async () => {
     if (!cameraRef.current || isRecording || isStoppingRef.current) return;
 
-    console.log("🎥 Bắt đầu quay video...");
     setIsRecording(true);
     isStoppingRef.current = false;
-    recordStartTimeRef.current = Date.now();
 
     try {
-      // Bắt đầu quay video
       const recordPromise = cameraRef.current.recordAsync({
-        maxDuration: MAX_VIDEO_DURATION / 1000,
-        quality: "1080p",
+        maxDuration: MAX_VIDEO_DURATION_SEC,
         mute: true,
       });
 
-      // Kiểm tra thời gian và tự động dừng
-      recordTimerRef.current = setInterval(() => {
-        if (isStoppingRef.current) return;
+      // Backup stop
+      recordTimerRef.current = setTimeout(() => {
+        stopRecording();
+      }, MAX_VIDEO_DURATION_MS) as unknown as NodeJS.Timeout;
 
-        const elapsed = Date.now() - recordStartTimeRef.current;
-
-        // Tự động dừng khi hết thời gian
-        if (elapsed >= MAX_VIDEO_DURATION) {
-          stopRecording();
-        }
-      }, 100);
-
-      // Đợi video hoàn thành
       const video = await recordPromise;
 
-      if (video?.uri && !isStoppingRef.current) {
-        console.log("✅ Video đã được quay:", video.uri);
+      if (video?.uri) {
+        if (video.duration && video.duration * 1000 > MAX_VIDEO_DURATION_MS) {
+          Alert.alert("Video quá dài", `Tối đa ${MAX_VIDEO_DURATION_SEC} giây`);
+          return;
+        }
+
+        const sizeMB = await getFileSizeMB(video.uri);
         setPhotoUri(video.uri);
+        setMediaType("video");
+        setMediaSizeInMB(sizeMB);
       }
-    } catch (error: any) {
-      // Chỉ log lỗi thực sự, không log khi user chủ động dừng
-      if (!isStoppingRef.current && error?.message !== "Recording stopped") {
-        console.error("❌ Lỗi khi quay video:", error);
-        Alert.alert("Lỗi", "Không thể quay video. Vui lòng thử lại.");
-      }
+
+    } catch (e) {
+      console.warn("Record error:", e);
     } finally {
-      // Cleanup
       if (recordTimerRef.current) {
-        clearInterval(recordTimerRef.current);
+        clearTimeout(recordTimerRef.current);
         recordTimerRef.current = null;
       }
       setIsRecording(false);
@@ -153,7 +261,8 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
     }
   };
 
-  // Hàm dừng quay video
+
+
   const stopRecording = async () => {
     if (!cameraRef.current || !isRecording || isStoppingRef.current) return;
 
@@ -167,47 +276,9 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
     }
   };
 
-  // Kiểm tra quyền camera
-  if (!cameraPermission || !micPermission) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  if (!cameraPermission || !micPermission) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  if (!cameraPermission.granted || !micPermission.granted) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.permissionBox}>
-          <Text style={styles.permissionText}>
-            Ứng dụng cần quyền Camera quay video/chụp
-          </Text>
-
-          <Pressable
-            style={styles.permissionButton}
-            onPress={async () => {
-              await requestCameraPermission();
-              await requestMicPermission();
-            }}
-          >
-            <Text style={styles.permissionButtonText}>
-              Cấp quyền
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
+  // =============================================
+  // CAMERA FUNCTIONS
+  // =============================================
   const handleFlipCamera = () => {
     setFacing((current) => (current === "back" ? "front" : "back"));
   };
@@ -222,11 +293,15 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
         skipProcessing: true,
         base64: false,
         shutterSound: false,
-        mirror: facing === "front",
+        mirror: false,
       });
 
       if (photo?.uri) {
+        const sizeMB = await getFileSizeMB(photo.uri);
+
         setPhotoUri(photo.uri);
+        setMediaType("image");
+        setMediaSizeInMB(sizeMB);
       }
     } catch (error) {
       console.error("Lỗi khi chụp ảnh:", error);
@@ -238,8 +313,7 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
 
   const handleOpenGallery = async () => {
     try {
-      const permissionResult =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
         Alert.alert("Lỗi", "Cần quyền truy cập thư viện ảnh");
@@ -247,14 +321,32 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
       });
 
       if (!result.canceled && result.assets[0]) {
-        setPhotoUri(result.assets[0].uri);
+        const asset = result.assets[0];
+
+        if (
+          asset.type === "video" &&
+          asset.duration &&
+          asset.duration > MAX_VIDEO_DURATION_MS
+        ) {
+          Alert.alert(
+            "Video quá dài",
+            `Chỉ cho phép tối đa ${MAX_VIDEO_DURATION_SEC} giây`
+          );
+          return;
+        }
+
+        const sizeMB = await getFileSizeMB(asset.uri);
+
+        setPhotoUri(asset.uri);
+        setMediaType(asset.type === "video" ? "video" : "image");
+        setMediaSizeInMB(sizeMB);
       }
     } catch (error) {
       console.error("Lỗi khi mở thư viện:", error);
@@ -262,22 +354,92 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
     }
   };
 
-  const handleCancelPhoto = () => {
+  // =============================================
+  // MEDIA CONTROL FUNCTIONS
+  // =============================================
+
+
+  const handleCancelPhoto = async () => {
+    if (photoUri) {
+      try {
+        await FileSystem.deleteAsync(photoUri, { idempotent: true });
+      } catch (e) {
+        console.warn("Không xóa được file cache:", e);
+      }
+    }
+
     setPhotoUri(null);
+    setMediaType(null);
+    setMediaSizeInMB(null);
   };
 
-  const handleSendPhoto = () => {
-    if (photoUri) {
-      Alert.alert("Gửi ảnh", `Đang gửi: ${photoUri.split("/").pop()}`, [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Gửi",
-          onPress: () => {
-            console.log("Gửi media:", photoUri);
-            setPhotoUri(null);
-          },
+  const handleSendPhoto = async () => {
+    if (!photoUri || !mediaType) return;
+
+    // 1. Check size theo plan
+    const maxSize =
+      mediaType === "image"
+        ? userPlan.max_image_size
+        : userPlan.max_video_size;
+
+    if (mediaSizeInMB && mediaSizeInMB > maxSize) {
+      Alert.alert(
+        "Lỗi",
+        `${mediaType === "image" ? "Ảnh" : "Video"} vượt quá ${maxSize}MB`
+      );
+      return;
+    }
+
+    setIsSending(true);
+
+    try {
+      // 2. Build file
+      const file = buildMediaFile(photoUri, mediaType);
+
+      // 3. Build payload
+      const payload = {
+        userData: {
+          idToken: user.idToken,   // 👈 bạn lấy từ auth
+          localId: user.localId,
         },
-      ]);
+        mediaInfo: {
+          type: mediaType,
+          file,
+        },
+        options: {
+          caption: postOverlay || "",
+        },
+      };
+
+      // 4. Upload
+      if (!user) {
+        Alert.alert("Lỗi", "Vui lòng đăng nhập lại");
+        return;
+      }
+
+      const res = await uploadMedia({
+        userData: {
+          idToken: user.idToken,
+          localId: user.localId,
+        },
+        mediaInfo: {
+          type: mediaType,
+          file,
+        },
+        options: {
+          caption: postOverlay || "",
+        },
+      });
+
+      console.log("✅ Upload OK:", res);
+
+      Alert.alert("Thành công", "Đã đăng moment 🎉");
+      handleCancelPhoto();
+    } catch (err) {
+      console.error("❌ Upload failed:", err);
+      Alert.alert("Lỗi", "Upload thất bại, vui lòng thử lại");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -288,12 +450,62 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
     ]);
   };
 
+  // =============================================
+  // PERMISSION CHECKS
+  // =============================================
+  if (!cameraPermission || !micPermission) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  if (!cameraPermission.granted || !micPermission.granted) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.permissionBox}>
+          <Text style={styles.permissionText}>
+            Ứng dụng cần quyền Camera và Microphone
+          </Text>
+          <Pressable
+            style={styles.permissionButton}
+            onPress={async () => {
+              await requestCameraPermission();
+              await requestMicPermission();
+            }}
+          >
+            <Text style={styles.permissionButtonText}>Cấp quyền</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
+  }
+
+  // =============================================
+  // MAIN RENDER
+  // =============================================
   return (
     <View style={styles.container}>
+
       {/* Camera hoặc ảnh/video đã chụp */}
       <View style={styles.cameraContainer}>
         {photoUri ? (
-          <Image source={{ uri: photoUri }} style={styles.cameraBox} />
+          mediaType === "video" ? (
+            <Video
+              source={{ uri: photoUri }}
+              style={styles.cameraBox}
+              useNativeControls={false}
+              resizeMode={ResizeMode.CONTAIN}
+              shouldPlay={true}
+              isLooping={true}
+            />
+          ) : (
+            <Image
+              source={{ uri: photoUri }}
+              style={[
+                styles.cameraBox, facing === "front" && { transform: [{ scaleX: -1 }] },]} />
+          )
         ) : (
           <CameraView
             ref={cameraRef}
@@ -304,105 +516,47 @@ export default function MainHomeTab({ goToPage }: ProfileScreenProps) {
           />
         )}
 
-        {/* Border progress chạy xung quanh khi đang quay */}
-        <BorderProgress 
-          isRecording={isRecording} 
-          duration={MAX_VIDEO_DURATION} 
-        />
+        <BorderProgress isRecording={isRecording} duration={MAX_VIDEO_DURATION} />
 
-        {/* Overlay loading khi đang chụp */}
         {isCapturing && (
           <View style={styles.capturingOverlay}>
             <ActivityIndicator size="large" color="white" />
             <Text style={styles.capturingText}>Đang chụp...</Text>
           </View>
         )}
-      </View>
-
-      {/* Nút điều khiển */}
-      <View style={styles.buttonRow}>
-        {photoUri ? (
-          // Chế độ xem media đã chụp
-          <>
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleCancelPhoto}
-              android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            >
-              <View style={styles.actionButton}>
-                <Entypo name="cross" size={30} color="white" />
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleSendPhoto}
-              android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            >
-              <View style={[styles.captureButton, styles.sendButton]}>
-                <MaterialIcons
-                  name="send"
-                  size={28}
-                  color="white"
-                  style={{ transform: [{ rotate: "-20deg" }] }}
-                />
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleCustomAction}
-              android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            >
-              <View style={styles.actionButton}>
-                <FontAwesome name="edit" size={24} color="white" />
-              </View>
-            </Pressable>
-          </>
-        ) : (
-          // Chế độ chụp ảnh/quay video
-          <>
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleOpenGallery}
-              android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            >
-              <View style={styles.actionButton}>
-                <FontAwesome name="photo" size={28} color="white" />
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleTakePhoto}
-              onLongPress={startRecording}
-              onPressOut={stopRecording}
-              delayLongPress={500}
-              android_ripple={{ color: "rgba(255,255,255,0.3)" }}
-            >
-              <View
-                style={[
-                  styles.captureButton,
-                  isRecording && styles.recordingButton,
-                ]}
-              >
-                {isRecording && <View style={styles.recordingDot} />}
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={styles.buttonArea}
-              onPress={handleFlipCamera}
-              android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-            >
-              <View style={styles.actionButton}>
-                <MaterialIcons name="flip-camera-ios" size={30} color="white" />
-              </View>
-            </Pressable>
-          </>
+        {photoUri && (
+          <AutoResizeCaption
+            postOverlay={postOverlay}
+            setPostOverlay={setPostOverlay}
+          />
         )}
       </View>
+      <Streak />
 
+      {/* Media Size Info */}
+      <MediaSizeInfo
+        previewType={mediaType}
+        sizeInMB={mediaSizeInMB}
+        maxImageSize={userPlan.max_image_size}
+        maxVideoSize={userPlan.max_video_size}
+      />
+
+      {/* Action Controls */}
+      <ActionControls
+        hasMedia={!!photoUri}
+        onCapture={handleTakePhoto}
+        onStartRecording={startRecording}
+        onStopRecording={stopRecording}
+        onFlipCamera={handleFlipCamera}
+        onOpenGallery={handleOpenGallery}
+        onSend={handleSendPhoto}
+        onCancel={handleCancelPhoto}
+        onCustomAction={handleCustomAction}
+        isRecording={isRecording}
+        isSending={isSending}
+      />
+
+      {/* History Button */}
       <View style={styles.historyButtonContainer}>
         <Pressable style={styles.historyButton} onPress={() => goToPage("history")}>
           <Text style={styles.historyText}>Lịch sử</Text>
@@ -480,58 +634,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
   },
-  buttonRow: {
-    flexDirection: "row",
-    width: width,
-    justifyContent: "space-around",
-    alignItems: "center",
-    marginTop: 40,
-    paddingHorizontal: 8,
-    height: 140,
-  },
-  buttonArea: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 40,
-  },
-  captureButton: {
-    width: 80,
-    height: 80,
-    borderRadius: 100,
-    backgroundColor: "white",
-    borderWidth: 4,
-    borderColor: "#ddd",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 3,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  sendButton: {
-    backgroundColor: "#cececeff",
-    borderColor: "#ffffffff",
-  },
-  actionButton: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  // recordingButton: {
-  //   borderColor: "#ffffffff",
-  //   borderWidth: 5,
-  // },
-  // recordingDot: {
-  //   width: 16,
-  //   height: 16,
-  //   borderRadius: 8,
-  //   backgroundColor: "#ff3b30",
-  // },
   historyButtonContainer: {
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: -50,
+    marginTop: 16,
   },
   historyButton: {
     justifyContent: "center",

@@ -19,6 +19,7 @@
     "@react-navigation/stack": "^7.4.8",
     "axios": "^1.12.1",
     "expo": "~54.0.6",
+    "expo-av": "~16.0.8",
     "expo-camera": "~17.0.7",
     "expo-constants": "~18.0.8",
     "expo-dev-client": "~6.0.12",
@@ -30,6 +31,7 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-linking": "~8.0.8",
     "expo-location": "~19.0.7",
+    "expo-media-library": "~18.2.1",
     "expo-notifications": "~0.32.11",
     "expo-router": "~6.0.3",
     "expo-secure-store": "~15.0.7",
@@ -52,8 +54,7 @@
     "react-native-vector-icons": "^10.3.0",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.21.0",
-    "react-native-worklets": "0.5.1",
-    "expo-av": "~16.0.8"
+    "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
     "@types/react": "~19.1.0",

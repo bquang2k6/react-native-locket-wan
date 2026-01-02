@@ -115,6 +115,7 @@ export const API_URL = {
   CHECK_AUTH_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/checkauth`)),
   GET_INFO_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/getinfo`)),
   REFRESH_TOKEN_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/refresh-token`)),
+  UPLOAD_MEDIA_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/upload-media`)),
 
   GET_LIST_FRIENDS_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/get-allfriends`)),
   SEND_CHAT_MESSAGE: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/sendChatMessageV2`)),

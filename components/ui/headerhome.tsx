@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -10,12 +12,45 @@ export default function HomeHeader({
 }: {
   goToPage: (pageIndex: string) => void;
 }) {
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [displayName, setDisplayName] = useState("NAN");
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem("user");
+        if (!userStr) return;
+
+        const user = JSON.parse(userStr);
+
+        if (user?.profilePicture) {
+          setAvatar(user.profilePicture);
+        }
+
+        if (user?.displayName) {
+          setDisplayName(user.displayName);
+        }
+      } catch (err) {
+        console.log("❌ Load user error:", err);
+      }
+    };
+
+    loadUser();
+  }, []);
+
   return (
     <SafeAreaView edges={["top"]} style={headerStyles.container}>
       <View style={headerStyles.left}>
-        <Pressable style={headerStyles.btnAvatar} onPress={() => goToPage("profile")}>
+        <Pressable
+          style={headerStyles.btnAvatar}
+          onPress={() => goToPage("profile")}
+        >
           <Image
-            source={require("@/assets/images/default-profile.png")}
+            source={
+              avatar
+                ? { uri: avatar }
+                : require("@/assets/images/default-profile.png")
+            }
             style={headerStyles.avatar}
           />
         </Pressable>
@@ -24,7 +59,7 @@ export default function HomeHeader({
         <View style={headerStyles.titleRow}>
           <FontAwesome6 name="user-group" size={16} color="white" />
           <ThemedText type="title" style={headerStyles.title}>
-            {"NAN"}
+            {/* {displayName} */}
           </ThemedText>
           <ThemedText type="title" style={headerStyles.title}>
             người bạn
@@ -32,7 +67,10 @@ export default function HomeHeader({
         </View>
       </View>
       <View style={headerStyles.right}>
-        <Pressable style={headerStyles.btnMess} onPress={() => goToPage("messages")}>
+        <Pressable
+          style={headerStyles.btnMess}
+          onPress={() => goToPage("messages")}
+        >
           <Feather name="message-circle" size={30} color="white" />
         </Pressable>
       </View>

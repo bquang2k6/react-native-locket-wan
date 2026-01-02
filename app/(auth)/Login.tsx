@@ -25,21 +25,21 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
-    useEffect(() => {
+  useEffect(() => {
     const loadRemember = async () => {
-        const remember = await AsyncStorage.getItem('rememberMe');
-        const savedEmail = await AsyncStorage.getItem('rememberEmail');
+      const remember = await AsyncStorage.getItem('rememberMe');
+      const savedEmail = await AsyncStorage.getItem('rememberEmail');
 
-        if (remember === 'true' && savedEmail) {
+      if (remember === 'true' && savedEmail) {
         setEmail(savedEmail);
         setRememberMe(true);
-        } else {
+      } else {
         setRememberMe(false);
-        }
+      }
     };
 
     loadRemember();
-    }, []);
+  }, []);
 
   const handleLogin = async () => {
     console.log('🟢 [Login] Press login');
@@ -78,21 +78,23 @@ const LoginScreen = () => {
 
       // 🔐 Lưu cache
       console.log('🟡 [Login] Saving to AsyncStorage...');
+      const expiration = Date.now() + 3600 * 1000; // Default 1 hour
       await AsyncStorage.multiSet([
         ['idToken', data.idToken ?? ''],
         ['refreshToken', data.refreshToken ?? ''],
         ['localId', data.uid || data.localId || ''],
+        ['tokenExpiration', String(expiration)],
         ['user', JSON.stringify(data)],
       ]);
 
-    if (rememberMe) {
+      if (rememberMe) {
         await AsyncStorage.multiSet([
-            ['rememberMe', 'true'],
-            ['rememberEmail', email],
+          ['rememberMe', 'true'],
+          ['rememberEmail', email],
         ]);
-    } else {
+      } else {
         await AsyncStorage.multiRemove(['rememberMe', 'rememberEmail']);
-    }
+      }
 
       // 🔍 Verify lại storage
       const verifyToken = await AsyncStorage.getItem('idToken');
