@@ -18,7 +18,11 @@ const STREAK_URL = "https://apilocketwan.traidep.site/locket/getLatestMomentV2";
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
-export default function Streak() {
+interface StreakProps {
+    refresh?: number;
+}
+
+export default function Streak({ refresh }: StreakProps) {
     const [streakCount, setStreakCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [isOutdated, setIsOutdated] = useState(false);
@@ -108,7 +112,7 @@ export default function Streak() {
         };
 
         fetchStreak();
-    }, []);
+    }, [refresh]);
 
     // Colors
     const colors = isOutdated

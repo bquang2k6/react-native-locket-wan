@@ -93,7 +93,7 @@ const createWsUrlString = (path: string) => `${BASE_WS_API_URL}${path}`;
  * =========================
  */
 class DynamicUrl {
-  constructor(private urlGetter: () => string) {}
+  constructor(private urlGetter: () => string) { }
   toString() { return this.urlGetter(); }
   valueOf() { return this.urlGetter(); }
 }
@@ -115,6 +115,7 @@ export const API_URL = {
   CHECK_AUTH_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/checkauth`)),
   GET_INFO_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/getinfo`)),
   REFRESH_TOKEN_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/refresh-token`)),
+  LOGIN_URL_V2: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/refresh-token`)), // Alias for refresh
   UPLOAD_MEDIA_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/upload-media`)),
 
   GET_LIST_FRIENDS_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/get-allfriends`)),

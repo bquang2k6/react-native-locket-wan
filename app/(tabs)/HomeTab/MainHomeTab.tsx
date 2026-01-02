@@ -140,6 +140,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [streakRefresh, setStreakRefresh] = useState(0);
 
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordStartTimeRef = useRef<number>(0);
@@ -432,7 +433,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       });
 
       console.log("✅ Upload OK:", res);
-
+      setStreakRefresh(prev => prev + 1); // Refresh streak UI
       Alert.alert("Thành công", "Đã đăng moment 🎉");
       handleCancelPhoto();
     } catch (err) {
@@ -531,7 +532,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           />
         )}
       </View>
-      <Streak />
+      <Streak refresh={streakRefresh} />
 
       {/* Media Size Info */}
       <MediaSizeInfo

@@ -11,23 +11,22 @@ export function useCheckAuth() {
 
     try {
       const userStr = await AsyncStorage.getItem('user');
-      // console.log('🧪 [Auth] raw user:', userStr);
-
       if (!userStr) {
         setIsAuth(false);
         return;
       }
 
-      const user = JSON.parse(userStr);
-      const idToken = user?.idToken;
+      // 🔄 Kiểm tra và làm mới token nếu cần
+      const { checkAndRefreshIdToken } = require('./tokenManager');
+      const validToken = await checkAndRefreshIdToken();
 
-      if (!idToken) {
+      if (!validToken) {
         setIsAuth(false);
         return;
       }
 
       setIsAuth(true);
-      console.log('✅ [Auth] Auth success');
+      console.log('✅ [Auth] Xác thực thành công với mã thông báo hợp lệ/đã được làm mới.');
     } catch (e) {
       console.error('❌ [Auth] Error:', e);
       setIsAuth(false);
