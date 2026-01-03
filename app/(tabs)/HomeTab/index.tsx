@@ -5,34 +5,44 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeHeader from "@/components/ui/headerhome";
 import HistoryTab from "./HistoryTab";
 import MainHomeTab from "./MainHomeTab";
+import RollcallTab from "./RollcallTab";
 import Taskbar from "@/components/ui/tasbar";
 
 interface ProfileScreenProps {
   goToPage: (pageKey: string) => void;
+  setIsOnRollcall?: (isOnRollcall: boolean) => void;
 }
-export default function HomePage({ goToPage }: ProfileScreenProps) {
+export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenProps) {
   const [currentPage, setCurrentPage] = useState("main");
 
   const verticalPagerRef = useRef<PagerView>(null);
   const pageMap: Record<string, number> = {
     main: 0,
     history: 1,
+    rollcall: 2,
   };
   const goToPageVertical = (pageKey: string) => {
     const pageIndex = pageMap[pageKey];
     if (pageIndex !== undefined) {
       verticalPagerRef.current?.setPage(pageIndex);
       setCurrentPage(pageKey);
+
+      // Notify parent when on rollcall
+      if (setIsOnRollcall) {
+        setIsOnRollcall(pageKey === 'rollcall');
+      }
     }
   };
 
   return (
     <View style={styles.homeContainer}>
-      {/* Header cố định */}
-      <HomeHeader
-        goToPage={goToPage}
-        hideFriendIndicator={currentPage === "history"}
-      />
+      {/* Header cố định - Hide on rollcall */}
+      {currentPage !== "rollcall" && (
+        <HomeHeader
+          goToPage={goToPage}
+          hideFriendIndicator={currentPage === "history"}
+        />
+      )}
       {currentPage !== "history" && (
         <Taskbar goToPage={goToPage} goToPageVertical={goToPageVertical} />
       )}
@@ -43,9 +53,16 @@ export default function HomePage({ goToPage }: ProfileScreenProps) {
         initialPage={pageMap.main}
         orientation="vertical"
         ref={verticalPagerRef}
+        scrollEnabled={currentPage !== "rollcall"} // Disable vertical scroll on rollcall
         onPageSelected={(e) => {
           const pos = e.nativeEvent.position;
-          setCurrentPage(pos === 0 ? "main" : "history");
+          const newPage = pos === 0 ? "main" : pos === 1 ? "history" : "rollcall";
+          setCurrentPage(newPage);
+
+          // Notify parent when on rollcall
+          if (setIsOnRollcall) {
+            setIsOnRollcall(newPage === 'rollcall');
+          }
         }}
       >
         <View key="main" style={styles.page}>
@@ -54,6 +71,10 @@ export default function HomePage({ goToPage }: ProfileScreenProps) {
 
         <View key="history" style={styles.page}>
           <HistoryTab goToPage={goToPageVertical} />
+        </View>
+
+        <View key="rollcall" style={styles.page}>
+          <RollcallTab goToPage={goToPageVertical} />
         </View>
       </PagerView>
     </View>

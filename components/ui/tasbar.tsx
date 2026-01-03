@@ -72,7 +72,7 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
     { id: 'home', label: 'Trang Chủ', icon: Send, action: () => goToPageVertical('main') },
     { id: 'history', label: 'Lịch sử', icon: History, action: () => goToPageVertical('history') },
     { id: 'chat', label: 'Chat', icon: MessageCircle, action: () => goToPage('messages') },
-    { id: 'RollCall', label: 'Roll Call', icon: MegaphoneIcon, type: 'rollcall' }
+    { id: 'RollCall', label: 'Roll Call', icon: MegaphoneIcon, action: () => goToPageVertical('rollcall') }
   ];
 
   const sidebarItems = [

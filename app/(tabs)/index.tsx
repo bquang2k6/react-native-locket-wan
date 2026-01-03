@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { View, StyleSheet, Dimensions } from "react-native";
 import PagerView from "react-native-pager-view";
 // import ProfileScreen from "./ProfileTab/index";
@@ -12,6 +12,7 @@ const { width, height } = Dimensions.get("window");
 // HomeScreen với horizontal PagerView
 export default function HomeScreen() {
   const pagerRef = useRef<PagerView>(null);
+  const [isOnRollcall, setIsOnRollcall] = useState(false);
 
   // Mapping string key -> number index
   const pageMap: Record<string, number> = {
@@ -25,6 +26,11 @@ export default function HomeScreen() {
     if (pageIndex !== undefined) {
       pagerRef.current?.setPage(pageIndex);
     }
+
+    // Reset rollcall state when changing main tabs
+    if (pageKey !== 'home') {
+      setIsOnRollcall(false);
+    }
   };
 
   return (
@@ -32,12 +38,13 @@ export default function HomeScreen() {
       style={styles.horizontalPager}
       initialPage={pageMap.home}
       ref={pagerRef}
+      scrollEnabled={!isOnRollcall} // Disable horizontal swipe when on rollcall
     >
       <View key="profile">
         <PostCaption goToPage={goToPage} />
       </View>
       <View key="home">
-        <HomePage goToPage={goToPage} />
+        <HomePage goToPage={goToPage} setIsOnRollcall={setIsOnRollcall} />
       </View>
       <View key="messages">
         <TabTwoScreen />
