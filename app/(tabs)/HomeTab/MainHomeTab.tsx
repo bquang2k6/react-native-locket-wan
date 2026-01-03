@@ -32,6 +32,8 @@ import Streak from "../../../components/Streak";
 import { CustomStudioModal, PostOverlay } from "./components/CustomStudio/CustomStudioModal";
 
 import { uploadMedia } from "@/hooks/services/uploadMedia";
+import { UploadQueue } from "@/hooks/services/UploadQueue";
+import NetInfo, { useNetInfo } from "@react-native-community/netinfo";
 
 const { width } = Dimensions.get("window");
 const AnimatedPath = Animated.createAnimatedComponent(Path);
@@ -441,33 +443,33 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
         },
       };
 
+      // Check Network
+      const netState = await NetInfo.fetch();
+      if (!netState.isConnected) {
+        console.log("📴 Offline detected. Adding to queue...");
+        const added = await UploadQueue.addToQueue(payload);
+        if (added) {
+          Alert.alert("Offline", "Đã lưu vào danh sách chờ tải lên. Sẽ tự động tải lên khi có mạng.");
+          // Reset UI without deleting the file (since queue moved it or needs it)
+          // addToQueue MOVES the file, so photoUri is now invalid/moved.
+          // We can safely clear UI.
+          setPhotoUri(null);
+          setMediaType(null);
+          setMediaSizeInMB(null);
+          setPostOverlay({ type: "default", caption: "" });
+        } else {
+          Alert.alert("Lỗi", "Không thể lưu vào danh sách chờ.");
+        }
+        return;
+      }
+
       // 4. Upload
       if (!user) {
         Alert.alert("Lỗi", "Vui lòng đăng nhập lại");
         return;
       }
 
-      const res = await uploadMedia({
-        userData: {
-          idToken: user.idToken,
-          localId: user.localId,
-        },
-        mediaInfo: {
-          type: mediaType,
-          file,
-        },
-        options: {
-          type: postOverlay.type || "background",
-          overlay_id: postOverlay.overlay_id || "standard",
-          icon: postOverlay.icon || "",
-          text_color: postOverlay.text_color || "#FFFFFF",
-          color_top: postOverlay.color_top || "",
-          color_bottom: postOverlay.color_bottom || "",
-          audience: "everyone",
-          recipients: [],
-          caption: postOverlay.caption || "",
-        },
-      });
+      const res = await uploadMedia(payload);
 
       console.log("✅ Upload OK:", res);
       setStreakRefresh(prev => prev + 1); // Refresh streak UI
@@ -480,6 +482,19 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       setIsSending(false);
     }
   };
+
+  useEffect(() => {
+    // Process queue on mount in case there are pending items from last session
+    UploadQueue.processQueue();
+
+    // Listen for network changes to process queue
+    const unsubscribe = NetInfo.addEventListener(state => {
+      if (state.isConnected) {
+        UploadQueue.processQueue();
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleCustomAction = () => {
     setIsCustomStudioOpen(true);

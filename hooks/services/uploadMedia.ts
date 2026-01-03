@@ -19,6 +19,7 @@ export interface MediaUploadPayload {
     caption?: string;
     [key: string]: any;
   };
+  onProgress?: (progress: number) => void;
 }
 
 /**
@@ -151,6 +152,12 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
         "Content-Type": "multipart/form-data",
       },
       transformRequest: (data) => data, // Essential for RN FormData
+      onUploadProgress: (progressEvent) => {
+        if (payload.onProgress && progressEvent.total) {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          payload.onProgress(percentCompleted);
+        }
+      },
     });
 
     if (timeoutId) clearTimeout(timeoutId);
