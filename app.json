@@ -15,11 +15,18 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Ứng dụng cần camera để chụp ảnh và quay video",
         "NSMicrophoneUsageDescription": "Ứng dụng không ghi âm, chỉ dùng để quay video"
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
       "package": "com.quang2k6.locketwan",
       "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
         "CAMERA",
         "RECORD_AUDIO",
         "android.permission.CAMERA",
@@ -32,7 +39,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "output": "static",
@@ -73,6 +81,9 @@
         "projectId": "1d35bd34-381a-4ae8-8185-efb493676bc7"
       }
     },
-    "owner": "wantech"
+    "owner": "wantech",
+    "updates": {
+      "url": "https://u.expo.dev/1d35bd34-381a-4ae8-8185-efb493676bc7"
+    }
   }
 }

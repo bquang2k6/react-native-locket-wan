@@ -1,42 +1,58 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "../themed-text";
 import Feather from "@expo/vector-icons/Feather";
+import { fetchFriends } from "@/hooks/services/friendsService";
+import FriendsModal from "./FriendsModal";
 
 export default function HomeHeader({
   goToPage,
+  hideFriendIndicator = false,
 }: {
   goToPage: (pageIndex: string) => void;
+  hideFriendIndicator?: boolean;
 }) {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [displayName, setDisplayName] = useState("NAN");
+  const [friendCount, setFriendCount] = useState<number>(0);
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  const loadUser = async () => {
+    try {
+      const userStr = await AsyncStorage.getItem("user");
+      if (!userStr) return;
+
+      const user = JSON.parse(userStr);
+
+      if (user?.profilePicture) {
+        setAvatar(user.profilePicture);
+      }
+
+      if (user?.displayName) {
+        setDisplayName(user.displayName);
+      }
+    } catch (err) {
+      console.log("❌ Load user error:", err);
+    }
+  };
+
+  const loadFriends = useCallback(async () => {
+    try {
+      const friends = await fetchFriends();
+      setFriendCount(friends.length);
+    } catch (err) {
+      console.log("❌ Load friends error:", err);
+    }
+  }, []);
 
   useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const userStr = await AsyncStorage.getItem("user");
-        if (!userStr) return;
-
-        const user = JSON.parse(userStr);
-
-        if (user?.profilePicture) {
-          setAvatar(user.profilePicture);
-        }
-
-        if (user?.displayName) {
-          setDisplayName(user.displayName);
-        }
-      } catch (err) {
-        console.log("❌ Load user error:", err);
-      }
-    };
-
     loadUser();
-  }, []);
+    loadFriends();
+  }, [loadFriends]);
 
   return (
     <SafeAreaView edges={["top"]} style={headerStyles.container}>
@@ -55,17 +71,19 @@ export default function HomeHeader({
           />
         </Pressable>
       </View>
-      <View style={headerStyles.center}>
-        <View style={headerStyles.titleRow}>
-          <FontAwesome6 name="user-group" size={16} color="white" />
-          <ThemedText type="title" style={headerStyles.title}>
-            {/* {displayName} */}
-          </ThemedText>
-          <ThemedText type="title" style={headerStyles.title}>
-            người bạn
-          </ThemedText>
+      {!hideFriendIndicator && (
+        <View style={headerStyles.center}>
+          <Pressable
+            style={headerStyles.titleRow}
+            onPress={() => setModalVisible(true)}
+          >
+            <FontAwesome6 name="user-group" size={16} color="white" />
+            <ThemedText type="title" style={headerStyles.title}>
+              {friendCount} người bạn
+            </ThemedText>
+          </Pressable>
         </View>
-      </View>
+      )}
       <View style={headerStyles.right}>
         <Pressable
           style={headerStyles.btnMess}
@@ -74,6 +92,11 @@ export default function HomeHeader({
           <Feather name="message-circle" size={30} color="white" />
         </Pressable>
       </View>
+      <FriendsModal
+        isVisible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        onRefresh={loadFriends}
+      />
     </SafeAreaView>
   );
 }

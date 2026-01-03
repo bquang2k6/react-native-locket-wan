@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import PagerView from "react-native-pager-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,8 +11,9 @@ interface ProfileScreenProps {
   goToPage: (pageKey: string) => void;
 }
 export default function HomePage({ goToPage }: ProfileScreenProps) {
+  const [currentPage, setCurrentPage] = useState("main");
+
   const verticalPagerRef = useRef<PagerView>(null);
-  const insets = useSafeAreaInsets();
   const pageMap: Record<string, number> = {
     main: 0,
     history: 1,
@@ -21,14 +22,20 @@ export default function HomePage({ goToPage }: ProfileScreenProps) {
     const pageIndex = pageMap[pageKey];
     if (pageIndex !== undefined) {
       verticalPagerRef.current?.setPage(pageIndex);
+      setCurrentPage(pageKey);
     }
   };
 
   return (
     <View style={styles.homeContainer}>
       {/* Header cố định */}
-      <HomeHeader goToPage={goToPage} />
-      <Taskbar goToPage={goToPage} />
+      <HomeHeader
+        goToPage={goToPage}
+        hideFriendIndicator={currentPage === "history"}
+      />
+      {currentPage !== "history" && (
+        <Taskbar goToPage={goToPage} goToPageVertical={goToPageVertical} />
+      )}
 
       {/* Vertical PagerView chiếm phần còn lại */}
       <PagerView
@@ -36,6 +43,10 @@ export default function HomePage({ goToPage }: ProfileScreenProps) {
         initialPage={pageMap.main}
         orientation="vertical"
         ref={verticalPagerRef}
+        onPageSelected={(e) => {
+          const pos = e.nativeEvent.position;
+          setCurrentPage(pos === 0 ? "main" : "history");
+        }}
       >
         <View key="main" style={styles.page}>
           <MainHomeTab goToPage={goToPageVertical} />

@@ -19,6 +19,8 @@ interface ListmsgProps {
 }
 
 const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
+  console.log('🎨 Listmsg rendering with:', messages?.length || 0, 'messages, loading:', loading);
+
   if (loading) {
     return (
       <View style={styles.centerContainer}>
@@ -27,7 +29,7 @@ const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
     );
   }
 
-  if (messages.length === 0) {
+  if (!messages || messages.length === 0) {
     return (
       <View style={styles.centerContainer}>
         <Text style={styles.emptyText}>Chưa có tin nhắn nào</Text>
@@ -38,18 +40,22 @@ const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
   return (
     <FlatList
       data={messages}
+      extraData={messages} // Force re-render when messages change
       keyExtractor={(item) => item.uid}
-      renderItem={({ item }) => (
-        <Uimsg
-          name={item.name}
-          avatarText={item.avatarText}
-          avatarImage={item.avatarImage}
-          lastMessage={item.lastMessage}
-          time={item.time}
-          unreadCount={item.unreadCount}
-          onClick={() => onSelect(item)}
-        />
-      )}
+      renderItem={({ item }) => {
+        console.log('🎨 Rendering item:', item.name);
+        return (
+          <Uimsg
+            name={item.name}
+            avatarText={item.avatarText}
+            avatarImage={item.avatarImage}
+            lastMessage={item.lastMessage}
+            time={item.time}
+            unreadCount={item.unreadCount}
+            onClick={() => onSelect(item)}
+          />
+        );
+      }}
       style={styles.list}
     />
   );

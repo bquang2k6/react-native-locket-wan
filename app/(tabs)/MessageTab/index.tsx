@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,26 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Alert,
 } from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Listmsg from './components/Listmsg';
 import SocketStatus from './components/SocketStatus';
+import {
+  GetAllMessage,
+  getMessagesWithUser,
+  sendMessage as sendMessageService,
+  markReadMessage,
+  sendReactionOnMessage,
+} from '@/hooks/services/chatService';
+import {
+  getSocket,
+  onNewListMessages,
+  onNewMessagesWithUser,
+  emitGetListMessages,
+  emitGetMessagesWithUser,
+} from '@/hooks/socket';
 
 interface ChatMessage {
   id: string;
@@ -34,6 +51,19 @@ interface SelectedChat {
   withUser: string;
 }
 
+interface Conversation {
+  uid: string;
+  with_user: string;
+  latestMessage?: {
+    body: string;
+    createdAt: number;
+  };
+  unreadCount?: number;
+  sender?: string;
+  updateTime?: number;
+  update_time?: number;
+}
+
 export default function ChatListPage() {
   const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -43,11 +73,387 @@ export default function ChatListPage() {
   const [isConnected, setIsConnected] = useState(false);
   const [newMessage, setNewMessage] = useState('');
   const [avatarError, setAvatarError] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [lastEnterTime, setLastEnterTime] = useState(0);
+  const [activeReactionMsg, setActiveReactionMsg] = useState<string | null>(null);
+  const messagesEndRef = useRef<ScrollView>(null);
+  const pressTimerRef = useRef<number | null>(null);
+  const [friendDetails, setFriendDetails] = useState<any[]>([]);
+  const userCacheRef = useRef<Map<string, any>>(new Map()); // Cache user info to avoid re-fetching
 
-  const handleSendMessage = () => {
+  // Load user from AsyncStorage
+  useEffect(() => {
+    const loadUser = async () => {
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        setUser(JSON.parse(userStr));
+      }
+    };
+    loadUser();
+  }, []);
+
+  // Load friends for name/avatar resolution
+  useEffect(() => {
+    const loadFriends = async () => {
+      try {
+        const friendsStr = await AsyncStorage.getItem('cached_friends'); // Changed from 'friendDetails'
+        console.log('👥 Raw friendDetails from storage:', friendsStr ? 'Found' : 'Not found');
+
+        if (friendsStr) {
+          const friends = JSON.parse(friendsStr);
+          setFriendDetails(friends);
+          console.log('👥 Loaded friends:', friends.length);
+          console.log('👥 First friend:', friends[0]);
+        } else {
+          console.log('⚠️ No friendDetails in AsyncStorage');
+        }
+      } catch (err) {
+        console.error('Error loading friends:', err);
+      }
+    };
+    loadFriends();
+  }, []);
+
+  // Monitor socket connection
+  useEffect(() => {
+    const socket = getSocket();
+
+    const handleConnect = () => {
+      console.log('✅ Socket connected');
+      setIsConnected(true);
+    };
+
+    const handleDisconnect = () => {
+      console.log('❌ Socket disconnected');
+      setIsConnected(false);
+    };
+
+    const handleConnectError = (error: any) => {
+      console.error('❌ Socket connection error:', error);
+      setIsConnected(false);
+    };
+
+    setIsConnected(socket.connected);
+
+    socket.on('connect', handleConnect);
+    socket.on('disconnect', handleDisconnect);
+    socket.on('connect_error', handleConnectError);
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('disconnect', handleDisconnect);
+      socket.off('connect_error', handleConnectError);
+    };
+  }, []);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollToEnd({ animated: true });
+    }
+  }, [chatMessages]);
+
+  // Fetch conversation list
+  useEffect(() => {
+    const fetchMessages = async () => {
+      try {
+        setLoading(true);
+        const token = await AsyncStorage.getItem('idToken');
+        if (!token) throw new Error('Chưa đăng nhập. Vui lòng đăng nhập lại.');
+
+        console.log('📨 Fetching conversations...');
+        const conversations = await GetAllMessage();
+        console.log('📨 Raw conversations from API:', conversations);
+
+        if (conversations?.length > 0) {
+          // Fetch user details for each conversation (with caching)
+          const transformedMessages = await Promise.all(
+            conversations.map(async (item: Conversation) => {
+              let userName = 'Người dùng';
+              let avatarUrl = '/prvlocket.png';
+
+              // Check cache first
+              if (userCacheRef.current.has(item.with_user)) {
+                const cachedUser = userCacheRef.current.get(item.with_user);
+                userName = cachedUser.name;
+                avatarUrl = cachedUser.avatar;
+                console.log('💾 Using cached user:', item.with_user, '→', userName);
+              } else {
+                try {
+                  // Fetch user details from API
+                  const userRes = await axios.post(
+                    'https://api.locketcamera.com/fetchUserV2',
+                    {
+                      data: {
+                        user_uid: item.with_user,
+                      },
+                    },
+                    {
+                      headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                      },
+                    }
+                  );
+
+                  const userData = userRes?.data?.result?.data;
+                  if (userData) {
+                    userName = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() ||
+                      userData.username ||
+                      'Người dùng';
+                    avatarUrl = userData.profile_picture_url || '/prvlocket.png';
+
+                    // Cache the user info
+                    userCacheRef.current.set(item.with_user, {
+                      name: userName,
+                      avatar: avatarUrl,
+                    });
+
+                    console.log('👤 Fetched user:', item.with_user, '→', userName);
+                  }
+                } catch (err) {
+                  console.log('⚠️ Failed to fetch user:', item.with_user);
+                  userName = item.with_user;
+                }
+              }
+
+              return {
+                uid: item.uid,
+                name: userName,
+                avatarText: userName.substring(0, 2).toUpperCase(),
+                avatarImage: avatarUrl,
+                lastMessage: item.latestMessage?.body || '',
+                time: String(item.latestMessage?.createdAt || item.updateTime || item.update_time || Date.now()),
+                unreadCount: item.unreadCount || 0,
+                sender: item.sender,
+                withUser: item.with_user,
+              };
+            })
+          );
+
+          transformedMessages.sort((a: any, b: any) => parseInt(b.time) - parseInt(a.time));
+          console.log('📨 Transformed messages:', transformedMessages.length, 'items');
+          console.log('📨 First message:', transformedMessages[0]);
+          setMessages(transformedMessages);
+        } else {
+          console.log('📨 No conversations returned from API');
+          setMessages([]);
+        }
+      } catch (err: any) {
+        console.error('❌ Fetch messages error:', err);
+        console.error('❌ Error details:', err.response?.data || err.message);
+        Alert.alert('Lỗi', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMessages();
+  }, []);
+
+  // Subscribe to real-time conversation list updates
+  useEffect(() => {
+    const token = AsyncStorage.getItem('idToken');
+    if (!token) return;
+
+    const handleNewConversations = (data: Conversation[]) => {
+      if (!Array.isArray(data) || !data.length) return;
+
+      const transformed = data.map((item) => {
+        const userName = item.with_user || 'Người dùng';
+        return {
+          uid: item.uid,
+          name: userName,
+          avatarText: userName.substring(0, 2).toUpperCase(),
+          avatarImage: '/prvlocket.png',
+          lastMessage: item.latestMessage?.body || '',
+          time: String(item.latestMessage?.createdAt || item.updateTime || item.update_time || Date.now()),
+          unreadCount: item.unreadCount || 0,
+          sender: item.sender,
+          withUser: item.with_user,
+        };
+      });
+
+      setMessages((prev) => {
+        const merged = [...prev];
+        transformed.forEach((newItem) => {
+          const existingIndex = merged.findIndex((m) => m.uid === newItem.uid);
+          if (existingIndex >= 0) {
+            merged[existingIndex] = newItem;
+          } else {
+            merged.push(newItem);
+          }
+        });
+        return merged.sort((a, b) => parseInt(b.time) - parseInt(a.time));
+      });
+    };
+
+    const off = onNewListMessages(handleNewConversations);
+
+    token.then((t) => {
+      if (t) emitGetListMessages({ timestamp: null, token: t });
+    });
+
+    const socket = getSocket();
+    const onReconnect = () => {
+      token.then((t) => {
+        if (t) emitGetListMessages({ timestamp: null, token: t });
+      });
+    };
+    socket.on('connect', onReconnect);
+
+    return () => {
+      off?.();
+      socket.off('connect', onReconnect);
+    };
+  }, []);
+
+  // Fetch chat detail when a chat is selected
+  useEffect(() => {
+    const fetchChatDetail = async () => {
+      if (!selectedChat) return;
+      try {
+        setLoadingChat(true);
+        setAvatarError(false);
+
+        const messages = await getMessagesWithUser(selectedChat.uid, null);
+
+        if (messages?.length > 0) {
+          setChatMessages(messages.reverse());
+        } else {
+          setChatMessages([]);
+        }
+      } catch (err) {
+        console.error('❌ Fetch chat detail error:', err);
+      } finally {
+        setLoadingChat(false);
+      }
+    };
+
+    fetchChatDetail();
+  }, [selectedChat]);
+
+  // Mark messages as read
+  useEffect(() => {
+    if (!selectedChat) return;
+    const markAsRead = async () => {
+      try {
+        await markReadMessage(selectedChat.uid);
+      } catch (err) {
+        console.error('Lỗi markAsRead:', err);
+      }
+    };
+
+    markAsRead();
+  }, [selectedChat]);
+
+  // Subscribe to real-time messages for selected chat
+  useEffect(() => {
+    if (!selectedChat) return;
+    const token = AsyncStorage.getItem('idToken');
+    if (!token) return;
+
+    const handleNewMessages = (updatedMessages: ChatMessage[]) => {
+      if (Array.isArray(updatedMessages)) {
+        setChatMessages(updatedMessages);
+      }
+    };
+
+    const off = onNewMessagesWithUser(handleNewMessages);
+
+    token.then((t) => {
+      if (t) {
+        emitGetMessagesWithUser({
+          messageId: selectedChat.uid,
+          timestamp: null,
+          token: t,
+        });
+      }
+    });
+
+    const socket = getSocket();
+    const onReconnect = () => {
+      token.then((t) => {
+        if (t) {
+          emitGetMessagesWithUser({
+            messageId: selectedChat.uid,
+            timestamp: null,
+            token: t,
+          });
+        }
+      });
+    };
+    socket.on('connect', onReconnect);
+
+    return () => {
+      off?.();
+      socket.off('connect', onReconnect);
+    };
+  }, [selectedChat]);
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedChat) return;
-    console.log('Send message:', newMessage);
-    // TODO: Implement send message logic
+    try {
+      const messageData = {
+        receiver_uid: selectedChat.withUser,
+        message: newMessage.trim(),
+        moment_id: null,
+      };
+
+      const result = await sendMessageService(messageData);
+
+      if (result?.result?.status === 200 || result?.data) {
+        const newMsgObj: ChatMessage = {
+          id: result.data?.id || String(Date.now()),
+          text: newMessage.trim(),
+          sender: user?.uid || user?.localId || '',
+          createdAt: Date.now() / 1000,
+          create_time: Date.now() / 1000,
+        };
+
+        setChatMessages((prev) => [...prev, newMsgObj]);
+        setNewMessage('');
+      } else {
+        throw new Error('Send message failed');
+      }
+    } catch (err) {
+      console.error('Send message error:', err);
+      Alert.alert('Lỗi', 'Không thể gửi tin nhắn');
+    }
+  };
+
+  const handleKeyDown = (text: string) => {
+    // For React Native, we'll handle double-enter differently
+    // This is a simplified version - you may want to add a send button instead
+    setNewMessage(text);
+  };
+
+  const handleReactMessage = async (messageId: string, emoji: string) => {
+    try {
+      if (!selectedChat?.uid) {
+        console.error('Không có conversation_id hợp lệ');
+        return;
+      }
+
+      const result = await sendReactionOnMessage({
+        messageId,
+        emoji,
+        conversationId: selectedChat.uid,
+      });
+
+      setChatMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+              ...m,
+              reactions: result?.data?.reactions || m.reactions || [],
+            }
+            : m
+        )
+      );
+    } catch (err) {
+      console.error('Lỗi khi gửi reaction:', err);
+    }
   };
 
   const formatMessageTime = (rawTimestamp: any) => {
@@ -61,8 +467,17 @@ export default function ChatListPage() {
     });
   };
 
+  // Debug: Log when messages state changes
+  useEffect(() => {
+    console.log('📋 Messages state changed:', messages.length, 'items');
+  }, [messages]);
+
+  // Debug: Log when selectedChat changes
+  useEffect(() => {
+    console.log('💬 Selected chat changed:', selectedChat ? selectedChat.name : 'null (list view)');
+  }, [selectedChat]);
+
   if (!selectedChat) {
-    // Danh sách tin nhắn
     return (
       <View style={styles.container}>
         <View style={styles.header}>
@@ -72,12 +487,11 @@ export default function ChatListPage() {
           <Text style={styles.headerTitle}>Tin nhắn</Text>
           <SocketStatus isConnected={isConnected} />
         </View>
-        <Listmsg messages={messages} onSelect={setSelectedChat} loading={loading} />
+        <Listmsg messages={messages} onSelect={(msg) => setSelectedChat(msg as any as SelectedChat)} loading={loading} />
       </View>
     );
   }
 
-  // Chi tiết chat
   return (
     <KeyboardAvoidingView
       style={styles.container}
@@ -101,12 +515,19 @@ export default function ChatListPage() {
         <Text style={styles.chatName}>{selectedChat.name || 'Người dùng'}</Text>
       </View>
 
-      <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
+      <ScrollView
+        ref={messagesEndRef}
+        style={styles.messagesContainer}
+        contentContainerStyle={styles.messagesContent}
+        onContentSizeChange={() => {
+          messagesEndRef.current?.scrollToEnd({ animated: false });
+        }}
+      >
         {loadingChat ? (
           <Text style={styles.loadingText}>Đang tải tin nhắn...</Text>
         ) : (
           chatMessages.map((msg) => {
-            const isOwn = msg.sender === 'current_user_uid'; // TODO: Replace with actual user ID
+            const isOwn = msg.sender === (user?.uid || user?.localId);
             const formattedTime = formatMessageTime(
               msg.create_time ?? msg.createdAt ?? msg.created_at ?? msg.timestamp
             );
@@ -115,6 +536,14 @@ export default function ChatListPage() {
               <View
                 key={msg.id}
                 style={[styles.messageRow, isOwn ? styles.messageRowOwn : styles.messageRowOther]}
+                onTouchStart={() => {
+                  pressTimerRef.current = setTimeout(() => {
+                    setActiveReactionMsg(msg.id);
+                  }, 1000) as any as number;
+                }}
+                onTouchEnd={() => {
+                  if (pressTimerRef.current) clearTimeout(pressTimerRef.current);
+                }}
               >
                 <View
                   style={[
@@ -141,6 +570,23 @@ export default function ChatListPage() {
                       ))}
                     </View>
                   )}
+
+                  {activeReactionMsg === msg.id && (
+                    <View style={styles.reactionPopup}>
+                      {['👍', '❤️', '😂', '😮', '😢', '🔥', '😍'].map((emo) => (
+                        <TouchableOpacity
+                          key={emo}
+                          onPress={() => {
+                            handleReactMessage(msg.id, emo);
+                            setActiveReactionMsg(null);
+                          }}
+                          style={styles.emojiButton}
+                        >
+                          <Text style={styles.emojiButtonText}>{emo}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  )}
                 </View>
                 {formattedTime && <Text style={styles.messageTime}>{formattedTime}</Text>}
               </View>
@@ -155,7 +601,7 @@ export default function ChatListPage() {
           placeholder="Nhập tin nhắn..."
           placeholderTextColor="#888"
           value={newMessage}
-          onChangeText={setNewMessage}
+          onChangeText={handleKeyDown}
           multiline
         />
         <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
@@ -255,6 +701,7 @@ const styles = StyleSheet.create({
     maxWidth: '75%',
     padding: 12,
     borderRadius: 16,
+    position: 'relative',
   },
   messageBubbleOwn: {
     backgroundColor: '#007AFF',
@@ -293,6 +740,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 12,
+  },
+  reactionPopup: {
+    position: 'absolute',
+    top: -40,
+    left: '50%',
+    transform: [{ translateX: -100 }],
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  emojiButton: {
+    padding: 4,
+  },
+  emojiButtonText: {
+    fontSize: 20,
   },
   messageTime: {
     fontSize: 12,

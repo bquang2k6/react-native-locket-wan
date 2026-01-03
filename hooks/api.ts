@@ -87,6 +87,16 @@ const createApiUrlString = (path: string) => `${BASE_API_URL}${path}`;
 const createDbApiUrlString = (path: string) => `${process.env.EXPO_PUBLIC_BASE_API_URL_DB || ""}${path}`;
 const createWsUrlString = (path: string) => `${BASE_WS_API_URL}${path}`;
 
+// Chat API helper: Uses the WebSocket server URL but with HTTPS protocol (not WSS)
+// This is needed because chat endpoints are on wslocketwan.wibu.life, not apilocketwan.traidep.site
+// But axios can only call HTTPS, not WSS
+const createChatApiUrlString = (path: string) => {
+  const chatServerUrl = process.env.EXPO_PUBLIC_BASE_API_URL_WS || "https://wslocketwan.wibu.life";
+  // Ensure it's HTTPS, not WSS (for axios compatibility)
+  const httpsUrl = chatServerUrl.replace(/^wss?:\/\//, 'https://');
+  return `${httpsUrl}${path}`;
+};
+
 /**
  * =========================
  * Dynamic URL
@@ -136,9 +146,13 @@ export const API_URL = {
   ROLLCALL_LIKE_COMMENT: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/likeRollcallComment`)),
   DELETE_ROLLCALL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/deleteRollcallPost`)),
 
-  // WebSocket
-  GET_All_MESSAGE: new DynamicUrl(() => createWsUrlString(`${LOCKET_URL}/getAllMessageV2`)),
-  SEND_CHAT_MESSAGE_REACTION: new DynamicUrl(() => createWsUrlString(`${LOCKET_URL}/sendChatMessageReaction`)),
+  // Chat API endpoints - use createChatApiUrlString to call wslocketwan.wibu.life with HTTPS
+  // These endpoints are on the WebSocket server but we call them via HTTPS (not WSS)
+  GET_All_MESSAGE: new DynamicUrl(() => createChatApiUrlString(`${LOCKET_URL}/getAllMessageV2`)),
+  GET_All_MESSAGE_WITH_USER: new DynamicUrl(() => createChatApiUrlString(`${LOCKET_URL}/getMessageWithUserV2`)),
+  MARK_AS_READ: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/markAsRead`)),
+  SEND_CHAT_MESSAGE_REACTION: new DynamicUrl(() => createChatApiUrlString(`${LOCKET_URL}/sendChatMessageReaction`)),
+  DELETE_MOMENT_V2: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/deleteMomentV2`)),
 
   // Pro
   GET_LASTEST_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_PRO}/getmoment`)),
