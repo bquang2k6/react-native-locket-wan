@@ -5,9 +5,10 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ThemedText } from "../themed-text";
-import Feather from "@expo/vector-icons/Feather";
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { fetchFriends } from "@/hooks/services/friendsService";
 import FriendsModal from "./FriendsModal";
+import { Link } from 'expo-router';
 
 import { useTheme } from "@/context/ThemeContext";
 
@@ -88,12 +89,11 @@ export default function HomeHeader({
         </View>
       )}
       <View style={headerStyles.right}>
-        <Pressable
-          style={[headerStyles.btnMess, { backgroundColor: colors["base-200"] }]}
-          onPress={() => goToPage("messages")}
-        >
-          <Feather name="message-circle" size={30} color={colors["base-content"]} />
-        </Pressable>
+        <Link href="/listupload" asChild>
+          <Pressable>
+            <AntDesign name="ordered-list" size={30} color={colors["base-content"]} />
+          </Pressable>
+        </Link>
       </View>
       <FriendsModal
         isVisible={isModalVisible}

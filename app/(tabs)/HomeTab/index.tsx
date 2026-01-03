@@ -54,7 +54,7 @@ export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenPro
         initialPage={pageMap.main}
         orientation="vertical"
         ref={verticalPagerRef}
-        scrollEnabled={currentPage !== "rollcall"} // Disable vertical scroll on rollcall
+        scrollEnabled={currentPage === "main"} // Only allow swipe from Main page
         onPageSelected={(e) => {
           const pos = e.nativeEvent.position;
           const newPage = pos === 0 ? "main" : pos === 1 ? "history" : "rollcall";

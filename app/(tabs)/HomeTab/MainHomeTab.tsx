@@ -597,12 +597,12 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       />
 
       {/* History Button */}
-      <View style={styles.historyButtonContainer}>
+      {/* <View style={styles.historyButtonContainer}>
         <Pressable style={styles.historyButton} onPress={() => goToPage("history")}>
           <Text style={[styles.historyText, { color: colors["base-content"] }]}>Lịch sử</Text>
           <Octicons name="chevron-down" size={24} color={colors["base-content"]} />
         </Pressable>
-      </View>
+      </View> */}
 
       {/* Custom Studio Modal */}
       <CustomStudioModal
@@ -682,21 +682,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 10,
   },
-  historyButtonContainer: {
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-  },
-  historyButton: {
-    justifyContent: "center",
-    alignItems: "center",
-    flexDirection: "column",
-  },
-  historyText: {
-    color: "white",
-    fontSize: 20,
-    fontWeight: "600",
-  },
+  // historyButtonContainer: {
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  //   marginTop: 16,
+  // },
+  // historyButton: {
+  //   justifyContent: "center",
+  //   alignItems: "center",
+  //   flexDirection: "column",
+  // },
+  // historyText: {
+  //   color: "white",
+  //   fontSize: 20,
+  //   fontWeight: "600",
+  // },
   streakWrapper: {
     position: "absolute",
     top: 35,        // 👈 chỉnh cao thấp tại đây

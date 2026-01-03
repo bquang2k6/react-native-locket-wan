@@ -88,14 +88,14 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
       items: [
         { id: 'User', label: 'Hồ sơ', icon: User, href: '/profile' },
         { id: 'Camera', label: 'Quyền riêng tư', icon: Camera, href: '/docs' },
-        { id: 'Setting', label: 'Cài đặt', icon: Settings, href: '/settings' },
+        { id: 'Setting', label: 'Cài đặt', icon: Settings, action: () => router.push('/settings') },
       ],
     },
     {
       title: 'Hỗ trợ',
       items: [
         { id: 'AlertCircle', label: 'Gửi đề xuất / Báo lỗi', icon: AlertCircle, href: 'https://wangtech.top' },
-        { id: 'Gift', label: 'Ủng hộ dự án', icon: Gift, href: '/aboutme' },
+        { id: 'Gift', label: 'Ủng hộ dự án', icon: Gift, href: '  ' },
       ],
     },
     {
