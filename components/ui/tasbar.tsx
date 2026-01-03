@@ -75,17 +75,37 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
     { id: 'RollCall', label: 'Roll Call', icon: MegaphoneIcon, action: () => goToPageVertical('rollcall') }
   ];
 
-  const sidebarItems = [
-    { id: 'Palette', label: 'Cài đặt giao diện', icon: Palette, href: '/theme' },
-    { id: 'Setting', label: 'Cài đặt', icon: Settings, href: '/settings' },
-    { id: 'Package', label: 'Quản lý gói đăng ký', icon: Package, href: '/upgrade' },
-    { id: 'User', label: 'Hồ sơ', icon: User, href: '/profile' },
-    { id: 'MdOutlineUpdate', label: 'Cập nhật lên bản mới', icon: Package, href: '/cache' },
-    { id: 'AlertCircle', label: 'Gửi đề xuất, Báo cáo sự cố', icon: AlertCircle, href: 'https://wangtech.top' },
-    { id: 'History', label: 'Lịch sử hình thành', icon: History, href: '/timeline' },
-    { id: 'Gift', label: 'Ủng hộ dự án', icon: Gift, href: '/aboutme' },
-    { id: 'Camera', label: 'Quyền riêng tư', icon: Camera, href: '/docs' },
-    { id: 'logout', label: 'Đăng xuất', icon: LogOut, action: handleLogout },
+  const sidebarSections = [
+    {
+      title: 'Ứng dụng',
+      items: [
+        { id: 'Palette', label: 'Cài đặt giao diện', icon: Palette, href: '/theme' },
+        { id: 'Package', label: 'Quản lý gói đăng ký', icon: Package, href: '/upgrade' },
+        { id: 'History', label: 'Lịch sử hình thành', icon: History, href: '/timeline' },
+      ],
+    },
+    {
+      title: 'Tài khoản',
+      items: [
+        { id: 'User', label: 'Hồ sơ', icon: User, href: '/profile' },
+        { id: 'Camera', label: 'Quyền riêng tư', icon: Camera, href: '/docs' },
+        { id: 'Setting', label: 'Cài đặt', icon: Settings, href: '/settings' },
+      ],
+    },
+    {
+      title: 'Hỗ trợ',
+      items: [
+        { id: 'AlertCircle', label: 'Gửi đề xuất / Báo lỗi', icon: AlertCircle, href: 'https://wangtech.top' },
+        { id: 'Gift', label: 'Ủng hộ dự án', icon: Gift, href: '/aboutme' },
+      ],
+    },
+    {
+      title: 'Nguy hiểm',
+      danger: true,
+      items: [
+        { id: 'logout', label: 'Đăng xuất', icon: LogOut, action: handleLogout },
+      ],
+    },
   ];
 
   return (
@@ -106,37 +126,43 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
             <TouchableOpacity activeOpacity={1} style={styles.sidebarContent}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.sidebarInner}>
-                  {sidebarItems.map((item, index) => {
-                    const Icon = item.icon;
-                    return (
-                      <React.Fragment key={item.id}>
-                        {index === 9 && <View style={styles.divider} />}
-                        <TouchableOpacity
-                          style={[
-                            styles.sidebarItem,
-                            item.id === 'logout' && styles.logoutItem
-                          ]}
-                          onPress={() => {
-                            if (item.action) {
-                              item.action();
-                            } else if (item.href) {
-                              router.push(item.href as any);
-                              setShowSidebar(false);
-                            }
-                          }}
+                  {sidebarSections.map((section) => (
+                    <View key={section.title} style={styles.section}>
+                      <Text style={styles.sectionTitle}>{section.title}</Text>
 
-                        >
-                          <Icon size={18} color={item.id === 'logout' ? '#ef4444' : '#000'} />
-                          <Text style={[
-                            styles.sidebarItemText,
-                            item.id === 'logout' && styles.logoutText
-                          ]}>
-                            {item.label}
-                          </Text>
-                        </TouchableOpacity>
-                      </React.Fragment>
-                    );
-                  })}
+                      {section.items.map((item) => {
+                        const Icon = item.icon;
+                        const isDanger = section.danger;
+
+                        return (
+                          <TouchableOpacity
+                            key={item.id}
+                            style={styles.sidebarItem}
+                            onPress={() => {
+                              if (item.action) item.action();
+                              else if (item.href) {
+                                router.push(item.href as any);
+                                setShowSidebar(false);
+                              }
+                            }}
+                          >
+                            <Icon size={18} color={isDanger ? '#ef4444' : '#ffffffff'} />
+                            <Text style={[
+                              styles.sidebarItemText,
+                              isDanger && { color: '#ef4444' }
+                            ]}>
+                              {item.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  ))}
+                </View>
+                {/* Footer */}
+                <View style={styles.sidebarFooter}>
+                  <Text style={styles.footerText}>Version 1.0.0</Text>
+                  <Text style={styles.footerCopyright}>© 2025 Locket Wan</Text>
                 </View>
               </ScrollView>
             </TouchableOpacity>
@@ -207,7 +233,7 @@ const styles = StyleSheet.create({
   },
   sidebarContent: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.59)',
     borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(0,0,0,0.1)',
@@ -227,7 +253,7 @@ const styles = StyleSheet.create({
   sidebarItemText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#000',
+    color: '#ffffffff',
   },
   logoutItem: {
     backgroundColor: 'transparent',
@@ -278,4 +304,35 @@ const styles = StyleSheet.create({
   taskbarLabelActive: {
     color: '#3b82f6',
   },
+  // Footer
+  sidebarFooter: {
+    padding: 24,
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(102, 126, 234, 0.1)',
+  },
+  footerText: {
+    fontSize: 11,
+    color: '#ffffffff',
+    fontWeight: '500',
+  },
+  footerCopyright: {
+    fontSize: 12,
+    color: '#667eea',
+    fontWeight: '600',
+  },
+  section: {
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#ffffffff',
+    marginBottom: 6,
+    marginLeft: 8,
+    textTransform: 'uppercase',
+  },
+
 });
