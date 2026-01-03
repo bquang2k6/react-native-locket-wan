@@ -23,25 +23,24 @@ import {
   AlertCircle,
   Gift,
   Camera,
+  Megaphone,
 } from 'lucide-react-native';
-import Svg, { Path } from 'react-native-svg';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
-const MegaphoneIcon = () => (
-  <Svg width={21} height={21} fill="currentColor" viewBox="0 0 16 16">
-    <Path d="M13 2.5a1.5 1.5 0 0 1 3 0v11a1.5 1.5 0 0 1-3 0v-.214c-2.162-1.241-4.49-1.843-6.912-2.083l.405 2.712A1 1 0 0 1 5.51 15.1h-.548a1 1 0 0 1-.916-.599l-1.85-3.49-.202-.003A2.014 2.014 0 0 1 0 9V7a2.02 2.02 0 0 1 1.992-2.013 75 75 0 0 0 2.483-.075c3.043-.154 6.148-.849 8.525-2.199zm1 0v11a.5.5 0 0 0 1 0v-11a.5.5 0 0 0-1 0m-1 1.35c-2.344 1.205-5.209 1.842-8 2.033v4.233q.27.015.537.036c2.568.189 5.093.744 7.463 1.993zm-9 6.215v-4.13a95 95 0 0 1-1.992.052A1.02 1.02 0 0 0 1 7v2c0 .55.448 1.002 1.006 1.009A61 61 0 0 1 4 10.065m-.657.975 1.609 3.037.01.024h.548l-.002-.014-.443-2.966a68 68 0 0 0-1.722-.082z" />
-  </Svg>
-);
 interface TaskbarProps {
   goToPage: (pageKey: string) => void;
   goToPageVertical: (pageKey: string) => void;
 }
 
+import { useTheme } from '@/context/ThemeContext';
+
 export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: TaskbarProps) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [activeItem, setActiveItem] = useState('home');
+  const { colors } = useTheme();
+
   const handleLogout = async () => {
     console.log('🔴 [Logout] start');
 
@@ -72,7 +71,7 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
     { id: 'home', label: 'Trang Chủ', icon: Send, action: () => goToPageVertical('main') },
     { id: 'history', label: 'Lịch sử', icon: History, action: () => goToPageVertical('history') },
     { id: 'chat', label: 'Chat', icon: MessageCircle, action: () => goToPage('messages') },
-    { id: 'RollCall', label: 'Roll Call', icon: MegaphoneIcon, action: () => goToPageVertical('rollcall') }
+    { id: 'RollCall', label: 'Roll Call', icon: Megaphone, action: () => goToPageVertical('rollcall') }
   ];
 
   const sidebarSections = [
@@ -122,22 +121,29 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
           activeOpacity={1}
           onPress={() => setShowSidebar(false)}
         >
-          <View style={styles.sidebarContainer}>
-            <TouchableOpacity activeOpacity={1} style={styles.sidebarContent}>
+          <View style={[styles.sidebarContainer, { backgroundColor: 'transparent' }]}>
+            <TouchableOpacity activeOpacity={1} style={[
+              styles.sidebarContent,
+              {
+                backgroundColor: colors["base-100"], // Use base-100 for sidebar background
+                borderColor: colors["base-300"]
+              }
+            ]}>
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.sidebarInner}>
                   {sidebarSections.map((section) => (
                     <View key={section.title} style={styles.section}>
-                      <Text style={styles.sectionTitle}>{section.title}</Text>
+                      <Text style={[styles.sectionTitle, { color: colors["base-content"] }]}>{section.title}</Text>
 
                       {section.items.map((item) => {
                         const Icon = item.icon;
                         const isDanger = section.danger;
+                        const itemColor = isDanger ? colors.error : colors["base-content"];
 
                         return (
                           <TouchableOpacity
                             key={item.id}
-                            style={styles.sidebarItem}
+                            style={[styles.sidebarItem]}
                             onPress={() => {
                               if (item.action) item.action();
                               else if (item.href) {
@@ -146,10 +152,10 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
                               }
                             }}
                           >
-                            <Icon size={18} color={isDanger ? '#ef4444' : '#ffffffff'} />
+                            <Icon size={18} color={itemColor} />
                             <Text style={[
                               styles.sidebarItemText,
-                              isDanger && { color: '#ef4444' }
+                              { color: itemColor }
                             ]}>
                               {item.label}
                             </Text>
@@ -160,9 +166,9 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
                   ))}
                 </View>
                 {/* Footer */}
-                <View style={styles.sidebarFooter}>
-                  <Text style={styles.footerText}>Version 1.0.0</Text>
-                  <Text style={styles.footerCopyright}>© 2025 Locket Wan</Text>
+                <View style={[styles.sidebarFooter, { borderTopColor: colors["base-300"] }]}>
+                  <Text style={[styles.footerText, { color: colors["base-content"] }]}>Version 1.0.0</Text>
+                  <Text style={[styles.footerCopyright, { color: colors.primary }]}>© 2025 Locket Wan</Text>
                 </View>
               </ScrollView>
             </TouchableOpacity>
@@ -172,11 +178,19 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
 
       {/* Bottom Taskbar */}
       <View style={styles.taskbarContainer}>
-        <View style={styles.taskbar}>
+        <View style={[
+          styles.taskbar,
+          {
+            backgroundColor: colors["base-100"], // Taskbar background
+            borderColor: colors["base-300"],
+            opacity: 0.95
+          }
+        ]}>
           <View style={styles.taskbarInner}>
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = activeItem === item.id;
+              const iconColor = active ? colors.primary : colors["base-content"];
 
               return (
                 <TouchableOpacity
@@ -189,12 +203,12 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
                 >
                   <Icon
                     size={22}
-                    color={active ? '#3b82f6' : 'rgba(0,0,0,0.7)'}
+                    color={iconColor}
                     strokeWidth={1.6}
                   />
                   <Text style={[
                     styles.taskbarLabel,
-                    active && styles.taskbarLabelActive
+                    { color: iconColor }
                   ]}>
                     {item.label}
                   </Text>
@@ -207,8 +221,8 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
               style={styles.taskbarButton}
               onPress={() => setShowSidebar(true)}
             >
-              <Menu size={22} color="rgba(0,0,0,0.7)" strokeWidth={1.6} />
-              <Text style={styles.taskbarLabel}>Danh mục</Text>
+              <Menu size={22} color={colors["base-content"]} strokeWidth={1.6} />
+              <Text style={[styles.taskbarLabel, { color: colors["base-content"] }]}>Danh mục</Text>
             </TouchableOpacity>
           </View>
         </View>

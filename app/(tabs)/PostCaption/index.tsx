@@ -14,8 +14,8 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LinearGradient } from 'expo-linear-gradient';
-import { 
-  ChevronRight, 
+import {
+  ChevronRight,
   Link as LinkIcon,
   Heart,
   MessageCircle,
@@ -24,6 +24,7 @@ import {
   Check,
   Trash2
 } from 'lucide-react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const POSTS_PER_PAGE = 10;
@@ -44,7 +45,7 @@ const getContrastColor = (hexColor) => {
 // Helper function to convert CSS gradient to React Native colors
 const getPlanGradient = (plan) => {
   const planLower = plan?.toLowerCase() || '';
-  
+
   switch (planLower) {
     case 'pro plus':
       return ['#0250c5', '#d43f8d'];
@@ -66,7 +67,8 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
   const { user_info, options, content, stats, created_at } = post;
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-    useEffect(() => {
+  const { colors } = useTheme();
+  useEffect(() => {
     const loadUser = async () => {
       try {
         const raw = await AsyncStorage.getItem('user');
@@ -147,7 +149,7 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
                   },
                 }
               );
-              
+
               if (response.ok) {
                 Alert.alert('Thành công', 'Đã xóa caption thành công!');
                 if (onDeleted) onDeleted(post.id);
@@ -179,10 +181,10 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
   const isAdmin = user_info?.username === ADMIN_USERNAME;
   const canDelete = currentUser?.username === ADMIN_USERNAME;
   const planGradient = getPlanGradient(user_info?.plan);
-  const hasPlan = user_info?.plan && 
-                  user_info.plan !== '' && 
-                  user_info.plan.toLowerCase() !== 'no plan' && 
-                  user_info.plan.toLowerCase() !== 'none';
+  const hasPlan = user_info?.plan &&
+    user_info.plan !== '' &&
+    user_info.plan.toLowerCase() !== 'no plan' &&
+    user_info.plan.toLowerCase() !== 'none';
   if (userLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -192,7 +194,7 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
   }
 
   return (
-    <View style={styles.postCard}>
+    <View style={[styles.postCard, { backgroundColor: colors["base-100"], borderColor: colors["base-300"] }]}>
       {/* Header */}
       <View style={styles.postHeader}>
         <View style={styles.headerLeft}>
@@ -202,11 +204,11 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
           />
           <View style={styles.userInfo}>
             <View style={styles.userNameRow}>
-              <Text style={styles.displayName}>
+              <Text style={[styles.displayName, { color: colors["base-content"] }]}>
                 {user_info?.displayName || 'Anonymous'}
               </Text>
-              <Text style={styles.dotSeparator}> • </Text>
-              
+              <Text style={[styles.dotSeparator, { color: colors["base-content"] }]}> • </Text>
+
               {/* Admin Badge */}
               {isAdmin && (
                 <LinearGradient
@@ -218,7 +220,7 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
                   <Text style={styles.badgeText}>Admin</Text>
                 </LinearGradient>
               )}
-              
+
               {/* Plan Badge */}
               {hasPlan ? (
                 <LinearGradient
@@ -242,12 +244,12 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
                 </LinearGradient>
               )}
             </View>
-            <Text style={styles.username}>
+            <Text style={[styles.username, { color: colors["base-content"], opacity: 0.7 }]}>
               @{user_info?.username || 'Anonymous'}
             </Text>
           </View>
         </View>
-        
+
         <Text style={styles.dateText}>{formatDate(created_at)}</Text>
       </View>
 
@@ -279,31 +281,31 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
       {/* Content */}
       {content && (
         <View style={styles.contentContainer}>
-          <Text style={styles.contentText}>{content}</Text>
+          <Text style={[styles.contentText, { color: colors["base-content"] }]}>{content}</Text>
         </View>
       )}
 
       {/* Actions and Stats */}
       <View style={styles.footer}>
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { borderTopColor: colors["base-300"] }]}>
           <TouchableOpacity style={styles.statButton}>
-            <Heart size={20} color="#6b7280" />
-            <Text style={styles.statText}>{stats?.hearts || 0}</Text>
+            <Heart size={20} color={colors["base-content"]} />
+            <Text style={[styles.statText, { color: colors["base-content"] }]}>{stats?.hearts || 0}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.statButton}>
-            <MessageCircle size={20} color="#6b7280" />
-            <Text style={styles.statText}>{stats?.comments || 0}</Text>
+            <MessageCircle size={20} color={colors["base-content"]} />
+            <Text style={[styles.statText, { color: colors["base-content"] }]}>{stats?.comments || 0}</Text>
           </TouchableOpacity>
 
           <View style={styles.statButton}>
-            <Download size={20} color="#6b7280" />
-            <Text style={styles.statText}>{stats?.downloads || 0}</Text>
+            <Download size={20} color={colors["base-content"]} />
+            <Text style={[styles.statText, { color: colors["base-content"] }]}>{stats?.downloads || 0}</Text>
           </View>
 
           <TouchableOpacity style={styles.statButton}>
-            <Send size={20} color="#6b7280" />
-            <Text style={styles.statText}>{stats?.shares || 0}</Text>
+            <Send size={20} color={colors["base-content"]} />
+            <Text style={[styles.statText, { color: colors["base-content"] }]}>{stats?.shares || 0}</Text>
           </TouchableOpacity>
         </View>
 
@@ -312,17 +314,19 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
           <TouchableOpacity
             style={[
               styles.actionButton,
-              isDownloaded ? styles.actionButtonSaved : styles.actionButtonNormal,
+              isDownloaded
+                ? [styles.actionButtonSaved, { backgroundColor: colors["base-200"], borderColor: colors.success }]
+                : [styles.actionButtonNormal, { backgroundColor: colors["base-200"], borderColor: colors["base-300"] }],
             ]}
             onPress={toggleDownload}
           >
             {isDownloaded ? (
               <>
-                <Check size={16} color="#059669" />
-                <Text style={styles.actionTextSaved}>Đã lưu</Text>
+                <Check size={16} color={colors.success} />
+                <Text style={[styles.actionTextSaved, { color: colors.success }]}>Đã lưu</Text>
               </>
             ) : (
-              <Text style={styles.actionTextNormal}>Lưu</Text>
+              <Text style={[styles.actionTextNormal, { color: colors["base-content"] }]}>Lưu</Text>
             )}
           </TouchableOpacity>
 
@@ -349,7 +353,7 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
 const PostsScreen = () => {
   const [user, setUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
-    // console.log("currentUser:", user);
+  // console.log("currentUser:", user);
   // console.log("currentUser.username:", user?.username);
   const [posts, setPosts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
@@ -357,6 +361,7 @@ const PostsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const scrollRef = React.useRef(null);
+  const { colors } = useTheme();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -436,14 +441,14 @@ const PostsScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors["base-200"] }]}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: colors["base-200"], borderBottomColor: colors["base-300"] }]}>
         <View style={styles.headerContent}>
           <View style={styles.userSection}>
-            <Text style={styles.userName}>
-            {user?.displayName || 'Anonymous'}
-          </Text>
+            <Text style={[styles.userName, { color: colors["base-content"] }]}>
+              {user?.displayName || 'Anonymous'}
+            </Text>
             <TouchableOpacity onPress={openProfile}>
               <View style={styles.usernameContainer}>
                 <Text style={styles.usernameLink}>
@@ -531,7 +536,7 @@ const PostsScreen = () => {
                       <Text
                         style={[
                           styles.pageNumberText,
-                          currentPage === page && styles.pageNumberTextActive,
+                          { color: currentPage === page ? colors["base-100"] : colors["base-content"] },
                         ]}
                       >
                         {page}
@@ -564,7 +569,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f3f4f6',
-   
+
   },
   header: {
     padding: 16,

@@ -131,6 +131,8 @@ const BorderProgress = ({ isRecording, duration = 10000 }: { isRecording: boolea
   );
 };
 
+import { useTheme } from "@/context/ThemeContext";
+
 export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   // Camera states
   const [facing, setFacing] = useState<CameraType>("front");
@@ -142,6 +144,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   const cameraRef = useRef<CameraView | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [streakRefresh, setStreakRefresh] = useState(0);
+  const { colors } = useTheme();
 
   const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordStartTimeRef = useRef<number>(0);
@@ -529,7 +532,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           mediaType === "video" ? (
             <Video
               source={{ uri: photoUri }}
-              style={styles.cameraBox}
+              style={[styles.cameraBox, { backgroundColor: colors["base-200"] }]}
               useNativeControls={false}
               resizeMode={ResizeMode.CONTAIN}
               shouldPlay={true}
@@ -539,12 +542,14 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
             <Image
               source={{ uri: photoUri }}
               style={[
-                styles.cameraBox, facing === "front" && { transform: [{ scaleX: -1 }] },]} />
+                styles.cameraBox,
+                { backgroundColor: colors["base-200"] },
+                facing === "front" && { transform: [{ scaleX: -1 }] },]} />
           )
         ) : (
           <CameraView
             ref={cameraRef}
-            style={styles.cameraBox}
+            style={[styles.cameraBox, { backgroundColor: colors["base-200"] }]}
             facing={facing}
             mirror={facing === "front"}
             autofocus="on"
@@ -594,8 +599,8 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       {/* History Button */}
       <View style={styles.historyButtonContainer}>
         <Pressable style={styles.historyButton} onPress={() => goToPage("history")}>
-          <Text style={styles.historyText}>Lịch sử</Text>
-          <Octicons name="chevron-down" size={24} color="white" />
+          <Text style={[styles.historyText, { color: colors["base-content"] }]}>Lịch sử</Text>
+          <Octicons name="chevron-down" size={24} color={colors["base-content"]} />
         </Pressable>
       </View>
 
@@ -624,7 +629,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 64,
     overflow: "hidden",
-    backgroundColor: "black",
+    // backgroundColor: "black", -> handled inline
   },
   svgBorder: {
     position: "absolute",

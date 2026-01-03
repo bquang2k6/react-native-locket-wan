@@ -29,6 +29,7 @@ import {
   emitGetListMessages,
   emitGetMessagesWithUser,
 } from '@/hooks/socket';
+import { useTheme } from '@/context/ThemeContext';
 
 interface ChatMessage {
   id: string;
@@ -80,6 +81,7 @@ export default function ChatListPage() {
   const pressTimerRef = useRef<number | null>(null);
   const [friendDetails, setFriendDetails] = useState<any[]>([]);
   const userCacheRef = useRef<Map<string, any>>(new Map()); // Cache user info to avoid re-fetching
+  const { colors } = useTheme();
 
   // Load user from AsyncStorage
   useEffect(() => {
@@ -163,7 +165,7 @@ export default function ChatListPage() {
 
         console.log('📨 Fetching conversations...');
         const conversations = await GetAllMessage();
-        console.log('📨 Raw conversations from API:', conversations);
+        // console.log('📨 Raw conversations from API:', conversations);
 
         if (conversations?.length > 0) {
           // Fetch user details for each conversation (with caching)
@@ -479,12 +481,12 @@ export default function ChatListPage() {
 
   if (!selectedChat) {
     return (
-      <View style={styles.container}>
-        <View style={styles.header}>
+      <View style={[styles.container, { backgroundColor: colors["base-100"] }]}>
+        <View style={[styles.header, { backgroundColor: colors["base-200"], borderBottomColor: colors["base-300"] }]}>
           <TouchableOpacity style={styles.backButton}>
             <Text style={styles.backText}></Text>
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Tin nhắn</Text>
+          <Text style={[styles.headerTitle, { color: colors["base-content"] }]}>Tin nhắn</Text>
           <SocketStatus isConnected={isConnected} />
         </View>
         <Listmsg messages={messages} onSelect={(msg) => setSelectedChat(msg as any as SelectedChat)} loading={loading} />
@@ -494,12 +496,12 @@ export default function ChatListPage() {
 
   return (
     <KeyboardAvoidingView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors["base-100"] }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={styles.chatHeader}>
+      <View style={[styles.chatHeader, { backgroundColor: colors["base-200"], borderBottomColor: colors["base-300"] }]}>
         <TouchableOpacity onPress={() => setSelectedChat(null)} style={styles.chatBackButton}>
-          <Text style={styles.backText}>←</Text>
+          <Text style={[styles.backText, { color: colors["base-content"] }]}>←</Text>
         </TouchableOpacity>
         {selectedChat.avatarImage && !avatarError ? (
           <Image
@@ -508,11 +510,11 @@ export default function ChatListPage() {
             onError={() => setAvatarError(true)}
           />
         ) : (
-          <View style={styles.chatAvatarPlaceholder}>
-            <Text style={styles.chatAvatarText}>{selectedChat.avatarText || 'U'}</Text>
+          <View style={[styles.chatAvatarPlaceholder, { backgroundColor: colors["base-100"] }]}>
+            <Text style={[styles.chatAvatarText, { color: colors["base-content"] }]}>{selectedChat.avatarText || 'U'}</Text>
           </View>
         )}
-        <Text style={styles.chatName}>{selectedChat.name || 'Người dùng'}</Text>
+        <Text style={[styles.chatName, { color: colors["base-content"] }]}>{selectedChat.name || 'Người dùng'}</Text>
       </View>
 
       <ScrollView
@@ -524,7 +526,7 @@ export default function ChatListPage() {
         }}
       >
         {loadingChat ? (
-          <Text style={styles.loadingText}>Đang tải tin nhắn...</Text>
+          <Text style={[styles.loadingText, { color: colors["base-content"] }]}>Đang tải tin nhắn...</Text>
         ) : (
           chatMessages.map((msg) => {
             const isOwn = msg.sender === (user?.uid || user?.localId);
@@ -548,18 +550,20 @@ export default function ChatListPage() {
                 <View
                   style={[
                     styles.messageBubble,
-                    isOwn ? styles.messageBubbleOwn : styles.messageBubbleOther,
+                    isOwn
+                      ? [styles.messageBubbleOwn, { backgroundColor: colors.primary }]
+                      : [styles.messageBubbleOther, { backgroundColor: colors["base-300"] }],
                   ]}
                 >
                   {msg.reply_moment && (
-                    <Text style={styles.replyText}>↪ {msg.reply_moment}</Text>
+                    <Text style={[styles.replyText, { color: isOwn ? colors["base-100"] : colors["base-content"] }]}>↪ {msg.reply_moment}</Text>
                   )}
 
                   {msg.thumbnail_url && (
                     <Image source={{ uri: msg.thumbnail_url }} style={styles.thumbnail} />
                   )}
 
-                  <Text style={styles.messageText}>{msg.text}</Text>
+                  <Text style={[styles.messageText, { color: isOwn ? colors["base-100"] : colors["base-content"] }]}>{msg.text}</Text>
 
                   {msg.reactions && msg.reactions.length > 0 && (
                     <View style={styles.reactionsContainer}>
@@ -572,7 +576,7 @@ export default function ChatListPage() {
                   )}
 
                   {activeReactionMsg === msg.id && (
-                    <View style={styles.reactionPopup}>
+                    <View style={[styles.reactionPopup, { backgroundColor: colors["base-200"] }]}>
                       {['👍', '❤️', '😂', '😮', '😢', '🔥', '😍'].map((emo) => (
                         <TouchableOpacity
                           key={emo}
@@ -595,17 +599,17 @@ export default function ChatListPage() {
         )}
       </ScrollView>
 
-      <View style={styles.inputContainer}>
+      <View style={[styles.inputContainer, { backgroundColor: colors["base-200"], borderTopColor: colors["base-300"] }]}>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { backgroundColor: colors["base-100"], borderColor: colors["base-300"], color: colors["base-content"] }]}
           placeholder="Nhập tin nhắn..."
-          placeholderTextColor="#888"
+          placeholderTextColor={colors["base-content"] + "80"}
           value={newMessage}
           onChangeText={handleKeyDown}
           multiline
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSendMessage}>
-          <Text style={styles.sendButtonText}>Gửi</Text>
+        <TouchableOpacity style={[styles.sendButton, { backgroundColor: colors.primary }]} onPress={handleSendMessage}>
+          <Text style={[styles.sendButtonText, { color: colors["base-100"] }]}>Gửi</Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
 import Uimsg from './Uimsg';
+import { useTheme } from '@/context/ThemeContext';
 
 interface Message {
   uid: string;
@@ -20,11 +21,12 @@ interface ListmsgProps {
 
 const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
   console.log('🎨 Listmsg rendering with:', messages?.length || 0, 'messages, loading:', loading);
+  const { colors } = useTheme();
 
   if (loading) {
     return (
       <View style={styles.centerContainer}>
-        <ActivityIndicator size="large" color="#888" />
+        <ActivityIndicator size="large" color={colors["base-content"]} />
       </View>
     );
   }
@@ -32,7 +34,7 @@ const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
   if (!messages || messages.length === 0) {
     return (
       <View style={styles.centerContainer}>
-        <Text style={styles.emptyText}>Chưa có tin nhắn nào</Text>
+        <Text style={[styles.emptyText, { color: colors["base-content"] }]}>Chưa có tin nhắn nào</Text>
       </View>
     );
   }

@@ -35,7 +35,7 @@ export const GetAllMessage = async (timestamp = null) => {
                 },
             }
         );
-        console.log("📨 GetAllMessage response:", res.data);
+        // console.log("📨 GetAllMessage response:", res.data);
         return res.data?.data;
     } catch (err) {
         console.warn("Failed to get all messages", err);

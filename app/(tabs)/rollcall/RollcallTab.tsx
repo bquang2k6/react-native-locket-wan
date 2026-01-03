@@ -19,6 +19,7 @@ import {
     RollcallPost,
 } from "@/hooks/services/rollcallService";
 import { fetchFriends, Friend } from "@/hooks/services/friendsService";
+import { useTheme } from "@/context/ThemeContext";
 
 const { height, width } = Dimensions.get("window");
 
@@ -31,6 +32,7 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
     const [loading, setLoading] = useState(true);
     const [friendDetails, setFriendDetails] = useState<Friend[]>([]);
     const [user, setUser] = useState<any>(null);
+    const { colors } = useTheme();
 
     // Week selector state
     const [selectedWeek, setSelectedWeek] = useState(52); // Default to week 52
@@ -99,9 +101,9 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#fff" />
-                <Text style={styles.loadingText}>Loading rollcall posts...</Text>
+            <View style={[styles.loadingContainer, { backgroundColor: colors["base-100"] }]}>
+                <ActivityIndicator size="large" color={colors["base-content"]} />
+                <Text style={[styles.loadingText, { color: colors["base-content"] }]}>Loading rollcall posts...</Text>
             </View>
         );
     }
@@ -125,22 +127,22 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
             {/* Week Selector Header */}
             <View style={styles.header}>
                 <TouchableOpacity
-                    style={styles.weekSelector}
+                    style={[styles.weekSelector, { backgroundColor: colors["base-200"] + "80", borderColor: colors["base-300"] }]}
                     onPress={() => setShowWeekPicker(true)}
                 >
-                    <Feather name="calendar" size={20} color="#fff" />
-                    <Text style={styles.weekText}>
+                    <Feather name="calendar" size={20} color={colors["base-content"]} />
+                    <Text style={[styles.weekText, { color: colors["base-content"] }]}>
                         Week {selectedWeek}, {selectedYear}
                     </Text>
-                    <Feather name="chevron-down" size={18} color="#fff" />
+                    <Feather name="chevron-down" size={18} color={colors["base-content"]} />
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                    style={styles.refreshButton}
+                    style={[styles.refreshButton, { backgroundColor: colors["base-200"] + "80", borderColor: colors["base-300"] }]}
                     onPress={loadRollcallPosts}
                     disabled={loading}
                 >
-                    <Feather name="refresh-cw" size={20} color="#fff" />
+                    <Feather name="refresh-cw" size={20} color={colors["base-content"]} />
                 </TouchableOpacity>
             </View>
 
@@ -156,13 +158,13 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
                     onPress={() => setShowWeekPicker(false)}
                 >
                     <View
-                        style={styles.pickerContainer}
+                        style={[styles.pickerContainer, { backgroundColor: colors["base-100"] }]}
                         onStartShouldSetResponder={() => true}
                     >
                         <View style={styles.pickerHeader}>
-                            <Text style={styles.pickerTitle}>Select Week</Text>
+                            <Text style={[styles.pickerTitle, { color: colors["base-content"] }]}>Select Week</Text>
                             <TouchableOpacity onPress={() => setShowWeekPicker(false)}>
-                                <Feather name="x" size={24} color="#000" />
+                                <Feather name="x" size={24} color={colors["base-content"]} />
                             </TouchableOpacity>
                         </View>
 
@@ -173,14 +175,16 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
                                     key={year}
                                     style={[
                                         styles.yearButton,
-                                        selectedYear === year && styles.yearButtonActive,
+                                        { backgroundColor: colors["base-200"] },
+                                        selectedYear === year && [styles.yearButtonActive, { backgroundColor: colors.primary }],
                                     ]}
                                     onPress={() => setSelectedYear(year)}
                                 >
                                     <Text
                                         style={[
                                             styles.yearButtonText,
-                                            selectedYear === year && styles.yearButtonTextActive,
+                                            { color: colors["base-content"] },
+                                            selectedYear === year && [styles.yearButtonTextActive, { color: colors["base-100"] }],
                                         ]}
                                     >
                                         {year}
@@ -198,7 +202,8 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
                                 <TouchableOpacity
                                     style={[
                                         styles.weekButton,
-                                        selectedWeek === week && styles.weekButtonActive,
+                                        { backgroundColor: colors["base-200"] },
+                                        selectedWeek === week && [styles.weekButtonActive, { backgroundColor: colors.primary }],
                                     ]}
                                     onPress={() => {
                                         setSelectedWeek(week);
@@ -208,7 +213,8 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
                                     <Text
                                         style={[
                                             styles.weekButtonText,
-                                            selectedWeek === week && styles.weekButtonTextActive,
+                                            { color: colors["base-content"] },
+                                            selectedWeek === week && [styles.weekButtonTextActive, { color: colors["base-100"] }],
                                         ]}
                                     >
                                         {week}
@@ -222,8 +228,8 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
             </Modal>
 
             {posts.length === 0 ? (
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>
+                <View style={[styles.emptyContainer, { backgroundColor: colors["base-100"] }]}>
+                    <Text style={[styles.emptyText, { color: colors["base-content"] + "80" }]}>
                         No rollcall posts for Week {selectedWeek}, {selectedYear}
                     </Text>
                 </View>
@@ -246,7 +252,7 @@ export default function RollcallTab({ goToPage }: RollcallTabProps) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: "#000",
+        // backgroundColor: "#000", -> dynamic
     },
     header: {
         marginTop: 50,

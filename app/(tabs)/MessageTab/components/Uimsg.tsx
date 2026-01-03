@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTheme } from '@/context/ThemeContext';
 
 interface UimsgProps {
   name: string;
@@ -20,6 +21,7 @@ const Uimsg: React.FC<UimsgProps> = ({
   unreadCount,
   onClick,
 }) => {
+  const { colors } = useTheme();
   const formatTime = (timestamp: string) => {
     if (!timestamp) return '';
     const date = new Date(parseInt(timestamp) * 1000);
@@ -34,13 +36,17 @@ const Uimsg: React.FC<UimsgProps> = ({
   };
 
   return (
-    <TouchableOpacity onPress={onClick} style={styles.container} activeOpacity={0.7}>
+    <TouchableOpacity
+      onPress={onClick}
+      style={[styles.container, { backgroundColor: colors["base-100"], borderBottomColor: colors["base-300"] }]}
+      activeOpacity={0.7}
+    >
       <View style={styles.avatarContainer}>
         {avatarImage ? (
           <Image source={{ uri: avatarImage }} style={styles.avatar} />
         ) : (
-          <View style={styles.avatarPlaceholder}>
-            <Text style={styles.avatarText}>{avatarText}</Text>
+          <View style={[styles.avatarPlaceholder, { backgroundColor: colors["base-200"] }]}>
+            <Text style={[styles.avatarText, { color: colors["base-content"] }]}>{avatarText}</Text>
           </View>
         )}
 
@@ -53,12 +59,12 @@ const Uimsg: React.FC<UimsgProps> = ({
 
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={[styles.name, { color: colors["base-content"] }]} numberOfLines={1}>
             {name}
           </Text>
-          <Text style={styles.time}>{formatTime(time)}</Text>
+          <Text style={[styles.time, { color: colors["base-content"] + "80" }]}>{formatTime(time)}</Text>
         </View>
-        <Text style={styles.lastMessage} numberOfLines={1}>
+        <Text style={[styles.lastMessage, { color: colors["base-content"] + "99" }]} numberOfLines={1}>
           {lastMessage || 'Chưa có tin nhắn nào'}
         </Text>
       </View>
@@ -72,8 +78,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#333',
-    backgroundColor: '#000',
+    // borderBottomColor: '#333', -> dynamic
+    // backgroundColor: '#000', -> dynamic
   },
   avatarContainer: {
     position: 'relative',

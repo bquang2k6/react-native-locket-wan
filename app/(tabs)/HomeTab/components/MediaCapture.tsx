@@ -16,6 +16,8 @@ interface MediaCaptureProps {
   isRecording: boolean;
 }
 
+import { useTheme } from "@/context/ThemeContext";
+
 export const MediaCapture: React.FC<MediaCaptureProps> = ({
   onCapture,
   onStartRecording,
@@ -24,6 +26,8 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
   onOpenGallery,
   isRecording,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={captureStyles.buttonRow}>
       {/* Nút mở thư viện */}
@@ -33,7 +37,7 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
       >
         <View style={captureStyles.actionButton}>
-          <FontAwesome name="photo" size={28} color="white" />
+          <FontAwesome name="photo" size={28} color={colors["base-content"]} />
         </View>
       </Pressable>
 
@@ -46,7 +50,11 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
         delayLongPress={500}
         android_ripple={{ color: "rgba(255,255,255,0.3)" }}
       >
-        <View style={[captureStyles.captureButton, isRecording && captureStyles.recordingButton]}>
+        <View style={[
+          captureStyles.captureButton,
+          { backgroundColor: colors["base-200"], borderColor: colors["base-100"] },
+          isRecording && captureStyles.recordingButton
+        ]}>
           {isRecording && <View style={captureStyles.recordingDot} />}
         </View>
       </Pressable>
@@ -58,7 +66,7 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
       >
         <View style={captureStyles.actionButton}>
-          <MaterialIcons name="flip-camera-ios" size={30} color="white" />
+          <MaterialIcons name="flip-camera-ios" size={30} color={colors["base-content"]} />
         </View>
       </Pressable>
     </View>

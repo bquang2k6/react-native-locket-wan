@@ -9,6 +9,8 @@ import Feather from "@expo/vector-icons/Feather";
 import { fetchFriends } from "@/hooks/services/friendsService";
 import FriendsModal from "./FriendsModal";
 
+import { useTheme } from "@/context/ThemeContext";
+
 export default function HomeHeader({
   goToPage,
   hideFriendIndicator = false,
@@ -20,6 +22,7 @@ export default function HomeHeader({
   const [displayName, setDisplayName] = useState("NAN");
   const [friendCount, setFriendCount] = useState<number>(0);
   const [isModalVisible, setModalVisible] = useState(false);
+  const { colors } = useTheme();
 
   const loadUser = async () => {
     try {
@@ -67,18 +70,18 @@ export default function HomeHeader({
                 ? { uri: avatar }
                 : require("@/assets/images/default-profile.png")
             }
-            style={headerStyles.avatar}
+            style={[headerStyles.avatar, { borderColor: colors["base-300"] }]}
           />
         </Pressable>
       </View>
       {!hideFriendIndicator && (
         <View style={headerStyles.center}>
           <Pressable
-            style={headerStyles.titleRow}
+            style={[headerStyles.titleRow, { backgroundColor: colors["base-200"] }]}
             onPress={() => setModalVisible(true)}
           >
-            <FontAwesome6 name="user-group" size={16} color="white" />
-            <ThemedText type="title" style={headerStyles.title}>
+            <FontAwesome6 name="user-group" size={16} color={colors["base-content"]} />
+            <ThemedText type="title" style={[headerStyles.title, { color: colors["base-content"] }]}>
               {friendCount} người bạn
             </ThemedText>
           </Pressable>
@@ -86,10 +89,10 @@ export default function HomeHeader({
       )}
       <View style={headerStyles.right}>
         <Pressable
-          style={headerStyles.btnMess}
+          style={[headerStyles.btnMess, { backgroundColor: colors["base-200"] }]}
           onPress={() => goToPage("messages")}
         >
-          <Feather name="message-circle" size={30} color="white" />
+          <Feather name="message-circle" size={30} color={colors["base-content"]} />
         </Pressable>
       </View>
       <FriendsModal
@@ -135,7 +138,7 @@ const headerStyles = StyleSheet.create({
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.22)", // nền nhẹ
+    // backgroundColor: "rgba(255, 255, 255, 0.22)", // nền nhẹ -> moved to inline styles
     borderRadius: 24, // bo góc đẹp
     paddingHorizontal: 16, // khoảng cách trong
     paddingVertical: 6,
@@ -146,7 +149,7 @@ const headerStyles = StyleSheet.create({
     justifyContent: "center",
     width: 45,
     height: 45,
-    backgroundColor: "rgba(255, 255, 255, 0.22)",
+    // backgroundColor: "rgba(255, 255, 255, 0.22)", -> moved to inline styles
     borderRadius: 100,
   },
   right: {
@@ -157,9 +160,9 @@ const headerStyles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 100,
-    borderWidth: 4, // độ dày viền
-    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderWidth: 2, // độ dày viền
+    // borderColor: "rgba(255, 255, 255, 0.22)", -> moved to inline styles
   },
-  title: { fontSize: 15, fontWeight: "600", color: "white" },
+  title: { fontSize: 15, fontWeight: "600" },
   buttonText: { color: "#007AFF", fontSize: 16 },
 });

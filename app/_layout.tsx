@@ -2,18 +2,41 @@ import { Stack } from "expo-router";
 import {
   DarkTheme,
   DefaultTheme,
-  ThemeProvider,
+  ThemeProvider as NavThemeProvider,
+  Theme,
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+function RootLayoutNav() {
+  const { themeName, colors } = useTheme();
+
+  // Create a React Navigation theme based on our selected theme colors
+  const navTheme: Theme = {
+    dark: themeName === 'dark' || colors["base-100"] === '#000000' || colors["base-100"] === '#1d232a', // Approximation
+    colors: {
+      primary: colors.primary,
+      background: colors["base-100"],
+      card: colors["base-200"],
+      text: colors["base-content"],
+      border: colors["base-300"],
+      notification: colors.accent,
+    },
+    fonts: DefaultTheme.fonts, // Inherit default fonts for now
+  };
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <NavThemeProvider value={navTheme}>
       <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
+      <StatusBar style={navTheme.dark ? "light" : "dark"} />
+    </NavThemeProvider>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootLayoutNav />
     </ThemeProvider>
   );
 }

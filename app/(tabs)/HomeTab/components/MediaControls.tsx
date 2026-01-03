@@ -6,18 +6,19 @@ import { View, Pressable, StyleSheet, Dimensions, ActivityIndicator } from "reac
 import { MaterialIcons, FontAwesome, Entypo } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 
-const SparklesIcon = () => (
+import { useTheme } from "@/context/ThemeContext";
+
+const SparklesIcon = ({ color }: { color: string }) => (
   <Svg
-    xmlns="http://www.w3.org/2000/svg"
     width={30}
     height={30}
     viewBox="0 0 24 24"
     fill="none"
-    stroke="currentColor"
+    stroke={color}
     strokeWidth={2}
     strokeLinecap="round"
     strokeLinejoin="round"
-    color="white"
+    color={color}
   >
     <Path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
     <Path d="M20 3v4" />
@@ -43,6 +44,8 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
   onCustomAction,
   isSending = false,
 }) => {
+  const { colors } = useTheme();
+
   return (
     <View style={controlsStyles.buttonRow}>
       {/* Nút hủy */}
@@ -53,7 +56,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
       >
         <View style={controlsStyles.actionButton}>
-          <Entypo name="cross" size={30} color="white" />
+          <Entypo name="cross" size={30} color={colors["base-content"]} />
         </View>
       </Pressable>
 
@@ -64,14 +67,18 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
         disabled={isSending}
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
       >
-        <View style={[controlsStyles.captureButton, controlsStyles.sendButton]}>
+        <View style={[
+          controlsStyles.captureButton,
+          controlsStyles.sendButton,
+          { backgroundColor: colors.primary, borderColor: colors["base-100"] }
+        ]}>
           {isSending ? (
-            <ActivityIndicator size="large" color="white" />
+            <ActivityIndicator size="large" color={colors["base-100"]} />
           ) : (
             <MaterialIcons
               name="send"
               size={28}
-              color="white"
+              color={colors["base-100"]}
               style={{ transform: [{ rotate: "-20deg" }] }}
             />
           )}
@@ -86,7 +93,7 @@ export const MediaControls: React.FC<MediaControlsProps> = ({
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
       >
         <View style={controlsStyles.actionButton}>
-          <SparklesIcon />
+          <SparklesIcon color={colors["base-content"]} />
         </View>
       </Pressable>
     </View>

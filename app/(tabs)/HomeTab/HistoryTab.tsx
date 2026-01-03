@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Feather, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { fetchFriends, Friend } from '../../../hooks/services/friendsService';
 import { fetchServerMoments, sendReaction, deleteServerMoment, TransformedMoment } from '../../../hooks/services/historyService';
+import { useTheme } from '@/context/ThemeContext';
 
 // Memoized slide component to prevent unnecessary re-renders
 const ModalSlide = React.memo(({
@@ -35,16 +36,19 @@ const ModalSlide = React.memo(({
   onReactionInputChange,
   onSendReaction,
   quickEmojis,
-  selectedEmoji
+  selectedEmoji,
+  onDelete,
+  isOwner
 }: any) => {
+  const { colors } = useTheme();
   return (
     <View style={styles.modalSlide}>
       <View style={styles.modalContent}>
         <View style={styles.modalUserHeader}>
-          <Image source={{ uri: creatorAvatar }} style={styles.modalUserAvatar} />
+          <Image source={{ uri: creatorAvatar }} style={[styles.modalUserAvatar, { borderColor: colors.primary }]} />
           <View>
-            <Text style={styles.modalUserName}>{creatorName}</Text>
-            <Text style={styles.modalUserTime}>
+            <Text style={[styles.modalUserName, { color: colors["base-content"] }]}>{creatorName}</Text>
+            <Text style={[styles.modalUserTime, { color: colors["base-content"], opacity: 0.6 }]}>
               {new Date(item.date).toLocaleString('vi-VN', {
                 hour: '2-digit',
                 minute: '2-digit',
@@ -76,6 +80,12 @@ const ModalSlide = React.memo(({
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
+
+            {isOwner && (
+              <TouchableOpacity style={styles.deleteButtonTop} onPress={() => onDelete(item)}>
+                <Feather name="trash-2" size={20} color="#fff" />
+              </TouchableOpacity>
+            )}
 
             {item.captions?.[0] && (
               <View style={styles.captionContainer}>
@@ -158,6 +168,7 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
 
   const [quickEmojis] = useState(["💛", "🤣", "😍", "😊", "👏", "🔥", "❤️", "😢", "😮", "😡"]);
   const [fetchErrorCount, setFetchErrorCount] = useState(0);
+  const { colors } = useTheme();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -249,18 +260,19 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
       posts = serverMoments.filter(post => isUserMatch(post.user, selectedFriendUid));
     }
 
-    // Pre-calculate creator info for each post to avoid expensive lookups during FlatList scroll
     return posts.map(moment => {
       const momentFriend = friendDetails.find(f => f.uid === moment.user || f.uid === moment.user?.uid || f.uid === moment.user?.localId);
+      const isOwner = isUserMatch(moment.user, user?.localId);
       const creatorName = momentFriend
         ? `${momentFriend.firstName || ""} ${momentFriend.lastName || ""}`.trim() || momentFriend.username || "Người dùng"
-        : (moment.user?.displayName || moment.user?.username || (moment.user === user?.localId ? "Bạn" : "Người dùng"));
-      const creatorAvatar = momentFriend?.profilePic || momentFriend?.profilePicture || moment.user?.profilePicture || (moment.user === user?.localId ? user?.profilePicture : null) || "/prvlocket.png";
+        : (moment.user?.displayName || moment.user?.username || (isOwner ? "Bạn" : "Người dùng"));
+      const creatorAvatar = momentFriend?.profilePic || momentFriend?.profilePicture || moment.user?.profilePicture || (isOwner ? user?.profilePicture : null) || "/prvlocket.png";
 
       return {
         ...moment,
         creatorName,
-        creatorAvatar
+        creatorAvatar,
+        isOwner
       };
     });
   }, [serverMoments, selectedFriendUid, friendDetails, user]);
@@ -382,30 +394,30 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors["base-100"] }]}>
       {/* Header Selector */}
       <View style={styles.header}>
         <TouchableOpacity
-          style={styles.selectorButton}
+          style={[styles.selectorButton, { backgroundColor: colors["base-200"], borderColor: colors["base-300"] }]}
           onPress={() => {
             console.log("Opening friend modal");
             setIsFriendModalOpen(true);
           }}
         >
-          <MaterialCommunityIcons name="account-group" size={24} color="#fff" />
-          <Text style={styles.selectorText}>{selectedFriendName}</Text>
-          <Feather name="chevron-down" size={18} color="#fff" />
+          <MaterialCommunityIcons name="account-group" size={24} color={colors["base-content"]} />
+          <Text style={[styles.selectorText, { color: colors["base-content"] }]}>{selectedFriendName}</Text>
+          <Feather name="chevron-down" size={18} color={colors["base-content"]} />
         </TouchableOpacity>
       </View>
 
       {/* Action buttons */}
       <View style={styles.actionButtons}>
         <TouchableOpacity
-          style={[styles.button, loadingServer && styles.buttonDisabled]}
+          style={[styles.button, { backgroundColor: colors.primary }, loadingServer && styles.buttonDisabled]}
           onPress={() => loadMoments(false)}
           disabled={loadingServer}
         >
-          <Text style={styles.buttonText}>
+          <Text style={[styles.buttonText, { color: colors["base-100"] }]}>
             {loadingServer ? 'Đang tải...' : 'Lấy bài viết'}
           </Text>
         </TouchableOpacity>
@@ -427,7 +439,7 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
         ListEmptyComponent={
           !loadingServer ? (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
+              <Text style={[styles.emptyText, { color: colors["base-content"], opacity: 0.7 }]}>
                 Chưa có ảnh nào từ {selectedFriendName === "Mọi người" ? "bất kỳ ai" : selectedFriendName}.
               </Text>
             </View>
@@ -449,20 +461,20 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
       >
         <View style={styles.friendModalOverlay}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setIsFriendModalOpen(false)} />
-          <View style={styles.friendModalContent}>
+          <View style={[styles.friendModalContent, { backgroundColor: colors["base-200"] }]}>
             <View style={styles.friendModalHeader}>
-              <Text style={styles.friendModalTitle}>Danh sách bạn bè</Text>
+              <Text style={[styles.friendModalTitle, { color: colors["base-content"] }]}>Danh sách bạn bè</Text>
               <TouchableOpacity onPress={() => setIsFriendModalOpen(false)}>
-                <Feather name="x" size={24} color="#fff" />
+                <Feather name="x" size={24} color={colors["base-content"]} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.searchContainer}>
-              <Feather name="search" size={20} color="rgba(255,255,255,0.5)" />
+            <View style={[styles.searchContainer, { backgroundColor: colors["base-100"] }]}>
+              <Feather name="search" size={20} color={colors["base-content"]} />
               <TextInput
-                style={styles.searchInput}
+                style={[styles.searchInput, { color: colors["base-content"] }]}
                 placeholder="Tìm kiếm bạn bè..."
-                placeholderTextColor="rgba(255,255,255,0.4)"
+                placeholderTextColor={colors["base-content"] + "80"}
                 value={searchTerm}
                 onChangeText={setSearchTerm}
               />
@@ -471,26 +483,26 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
             <ScrollView style={styles.friendList}>
               {/* Option: Everyone */}
               <TouchableOpacity
-                style={[styles.friendItem, !selectedFriendUid && styles.friendItemSelected]}
+                style={[styles.friendItem, !selectedFriendUid && [styles.friendItemSelected, { backgroundColor: colors.primary + "33", borderColor: colors.primary + "66" }]]}
                 onPress={() => handleSelectFriend(null, "Mọi người")}
               >
-                <View style={styles.friendAvatarPlaceholder}>
-                  <MaterialCommunityIcons name="account-group" size={24} color="#fff" />
+                <View style={[styles.friendAvatarPlaceholder, { backgroundColor: colors.primary }]}>
+                  <MaterialCommunityIcons name="account-group" size={24} color={colors["base-100"]} />
                 </View>
-                <Text style={styles.friendName}>Mọi người</Text>
+                <Text style={[styles.friendName, { color: colors["base-content"] }]}>Mọi người</Text>
               </TouchableOpacity>
 
               {/* Option: Me */}
               {user && (
                 <TouchableOpacity
-                  style={[styles.friendItem, selectedFriendUid === user.localId && styles.friendItemSelected]}
+                  style={[styles.friendItem, selectedFriendUid === user.localId && [styles.friendItemSelected, { backgroundColor: colors.primary + "33", borderColor: colors.primary + "66" }]]}
                   onPress={() => handleSelectFriend(user.localId, "Bạn")}
                 >
                   <Image
                     source={{ uri: user.profilePicture || "/prvlocket.png" }}
-                    style={styles.friendAvatar}
+                    style={[styles.friendAvatar, { borderColor: colors["base-300"] }]}
                   />
-                  <Text style={styles.friendName}>Bạn</Text>
+                  <Text style={[styles.friendName, { color: colors["base-content"] }]}>Bạn</Text>
                 </TouchableOpacity>
               )}
 
@@ -498,12 +510,12 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
               {filteredFriends.map(friend => (
                 <TouchableOpacity
                   key={friend.uid}
-                  style={[styles.friendItem, selectedFriendUid === friend.uid && styles.friendItemSelected]}
+                  style={[styles.friendItem, selectedFriendUid === friend.uid && [styles.friendItemSelected, { backgroundColor: colors.primary + "33", borderColor: colors.primary + "66" }]]}
                   onPress={() => handleSelectFriend(friend.uid, `${friend.firstName || ""} ${friend.lastName || ""}`.trim() || friend.username || "Người dùng")}
                 >
                   <Image
                     source={{ uri: friend.profilePic || friend.profilePicture || "/prvlocket.png" }}
-                    style={styles.friendAvatar}
+                    style={[styles.friendAvatar, { borderColor: colors["base-300"] }]}
                   />
                   <Text style={styles.friendName}>
                     {friend.firstName} {friend.lastName}
@@ -526,7 +538,7 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
         transparent={true}
         onRequestClose={handleCloseMedia}
       >
-        <View style={styles.modalOverlay}>
+        <View style={[styles.modalOverlay, { backgroundColor: colors["base-100"] + "F2" }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={handleCloseMedia} />
 
           <FlatList
@@ -546,6 +558,8 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
                 onSendReaction={handleSendReaction}
                 quickEmojis={quickEmojis}
                 selectedEmoji={selectedEmoji}
+                onDelete={handleDelete}
+                isOwner={item.isOwner}
               />
             )}
             pagingEnabled
@@ -572,23 +586,6 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
       </Modal>
 
 
-      {/* Bottom navigation bar */}
-      < View style={styles.bottomBar} >
-        <TouchableOpacity style={styles.bottomButton} onPress={handleCloseMedia}>
-          <MaterialCommunityIcons name="view-grid" size={30} color="#fff" />
-        </TouchableOpacity>
-        <Pressable onPress={() => goToPage("main")} style={styles.centerButtonContainer}>
-          <View style={styles.centerButtonOuter} />
-          <View style={styles.centerButtonInner} />
-        </Pressable>
-        <TouchableOpacity
-          style={[styles.deleteButton, !currentMoment && { opacity: 0.5 }]}
-          onPress={handleDelete}
-          disabled={!currentMoment}
-        >
-          <Feather name="trash-2" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View >
     </View >
   );
 };
@@ -819,7 +816,7 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     borderRadius: 40,
     borderWidth: 3,
-    borderColor: '#3b82f6',
+    // borderColor: '#3b82f6', // handled inline
     overflow: 'hidden',
   },
   mediaPreviewContainer: {
@@ -926,41 +923,15 @@ const styles = StyleSheet.create({
   sendButtonDisabled: {
     backgroundColor: '#555',
   },
-  bottomBar: {
+  deleteButtonTop: {
     position: 'absolute',
-    bottom: 40,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 30,
-  },
-  bottomButton: {
-    padding: 8,
-  },
-  centerButtonContainer: {
+    top: 12,
+    left: 12,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,0,0,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  centerButtonOuter: {
-    position: 'absolute',
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    borderWidth: 4,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  centerButtonInner: {
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: '#fff',
-  },
-  deleteButton: {
-    padding: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#fff',
   },
 });

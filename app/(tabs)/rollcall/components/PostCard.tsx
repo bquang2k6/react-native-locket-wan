@@ -18,6 +18,7 @@ import { useHeicImages } from "@/hooks/useHeicImages";
 import formatTime from "@/utils/formatTime";
 import { RollcallPost, RollcallComment } from "@/hooks/services/rollcallService";
 import { fetchFriends, Friend } from "@/hooks/services/friendsService";
+import { useTheme } from "@/context/ThemeContext";
 
 const { width, height } = Dimensions.get("window");
 
@@ -32,6 +33,7 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
     const [showComments, setShowComments] = useState(false);
     const [newComment, setNewComment] = useState("");
     const [comments, setComments] = useState<RollcallComment[]>(post.comments || []);
+    const { colors } = useTheme();
 
     useEffect(() => {
         const loadUser = async () => {
@@ -141,10 +143,10 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                         style={styles.avatar}
                     />
                     <View>
-                        <Text style={styles.userName}>
+                        <Text style={[styles.userName, { color: colors["base-content"] }]}>
                             {userInfo.firstName} {userInfo.lastName}
                         </Text>
-                        <Text style={styles.timestamp}>
+                        <Text style={[styles.timestamp, { color: colors["base-content"] }]}>
                             {formatTime(post.created_at._seconds)}
                         </Text>
                     </View>
@@ -155,8 +157,8 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                     onPress={() => setShowComments(!showComments)}
                     style={styles.commentButton}
                 >
-                    <Feather name="message-circle" size={18} color="#888" />
-                    <Text style={styles.commentCount}>{comments.length}</Text>
+                    <Feather name="message-circle" size={18} color={colors["base-content"]} />
+                    <Text style={[styles.commentCount, { color: colors["base-content"] }]}>{comments.length}</Text>
                 </TouchableOpacity>
             </View>
 
@@ -172,7 +174,7 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                     onPress={() => setShowComments(false)}
                 >
                     <View
-                        style={styles.modalContent}
+                        style={[styles.modalContent, { backgroundColor: colors["base-100"] }]}
                         onStartShouldSetResponder={() => true}
                     >
                         <ScrollView style={styles.commentsScroll}>
@@ -192,8 +194,8 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                                             style={styles.commentAvatar}
                                         />
                                         <View style={styles.commentBody}>
-                                            <Text style={styles.commentText}>
-                                                <Text style={styles.commenterName}>
+                                            <Text style={[styles.commentText, { color: colors["base-content"] }]}>
+                                                <Text style={[styles.commenterName, { color: colors["base-content"] }]}>
                                                     {commenter.firstName} {commenter.lastName}
                                                 </Text>
                                                 : {comment.body}
@@ -207,17 +209,17 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                         {/* Add Comment */}
                         <View style={styles.addCommentContainer}>
                             <TextInput
-                                style={styles.commentInput}
+                                style={[styles.commentInput, { color: colors["base-content"], borderColor: colors["base-300"] }]}
                                 value={newComment}
                                 onChangeText={setNewComment}
                                 placeholder="Write a comment..."
-                                placeholderTextColor="#999"
+                                placeholderTextColor={colors["base-content"] + "80"}
                             />
                             <TouchableOpacity
                                 onPress={handleAddComment}
-                                style={styles.sendButton}
+                                style={[styles.sendButton, { backgroundColor: colors.primary }]}
                             >
-                                <Text style={styles.sendButtonText}>Send</Text>
+                                <Text style={[styles.sendButtonText, { color: colors["base-100"] }]}>Send</Text>
                             </TouchableOpacity>
                         </View>
                     </View>

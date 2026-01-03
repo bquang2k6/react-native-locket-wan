@@ -5,15 +5,18 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import HomeHeader from "@/components/ui/headerhome";
 import HistoryTab from "./HistoryTab";
 import MainHomeTab from "./MainHomeTab";
-import RollcallTab from "./RollcallTab";
+import RollcallTab from "../rollcall/RollcallTab";
 import Taskbar from "@/components/ui/tasbar";
 
 interface ProfileScreenProps {
   goToPage: (pageKey: string) => void;
   setIsOnRollcall?: (isOnRollcall: boolean) => void;
 }
+import { useTheme } from "@/context/ThemeContext";
+
 export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenProps) {
   const [currentPage, setCurrentPage] = useState("main");
+  const { colors } = useTheme();
 
   const verticalPagerRef = useRef<PagerView>(null);
   const pageMap: Record<string, number> = {
@@ -35,7 +38,7 @@ export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenPro
   };
 
   return (
-    <View style={styles.homeContainer}>
+    <View style={[styles.homeContainer, { backgroundColor: colors["base-100"] }]}>
       {/* Header cố định - Hide on rollcall */}
       {currentPage !== "rollcall" && (
         <HomeHeader
@@ -43,9 +46,7 @@ export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenPro
           hideFriendIndicator={currentPage === "history"}
         />
       )}
-      {currentPage !== "history" && (
-        <Taskbar goToPage={goToPage} goToPageVertical={goToPageVertical} />
-      )}
+      <Taskbar goToPage={goToPage} goToPageVertical={goToPageVertical} />
 
       {/* Vertical PagerView chiếm phần còn lại */}
       <PagerView
@@ -83,7 +84,7 @@ export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenPro
 
 const styles = StyleSheet.create({
   horizontalPager: { flex: 1 },
-  homeContainer: { flex: 1, backgroundColor: "#000000ff" },
+  homeContainer: { flex: 1 },
   verticalPager: { flex: 1 },
   page: { flex: 1, zIndex: 5 },
   pageContent: {
