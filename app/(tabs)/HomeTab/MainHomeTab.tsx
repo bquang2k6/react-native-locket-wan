@@ -22,6 +22,7 @@ import Animated, {
 } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
 import { Video, ResizeMode } from "expo-av";
+import * as ImageManipulator from "expo-image-manipulator";
 
 
 // Import components
@@ -302,7 +303,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     setIsCapturing(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 1,
+        quality: 1, // Full quality for now, processing happens on send
         skipProcessing: true,
         base64: false,
         shutterSound: false,
@@ -310,6 +311,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       });
 
       if (photo?.uri) {
+        // Instant preview, no cropping here!
         const sizeMB = await getFileSizeMB(photo.uri);
 
         setPhotoUri(photo.uri);
@@ -417,8 +419,46 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     }
 
     try {
+      let finalPhotoUri = photoUri;
+
+      // 4. Decoupled Processing: Crop image to 1:1 square BEFORE uploading
+      if (mediaType === "image") {
+        console.log("✂️ Cropping image to 1:1 square before upload...");
+        try {
+          // Get original dimensions
+          const photoInfo = await new Promise<{ width: number, height: number }>((resolve, reject) => {
+            Image.getSize(photoUri, (w, h) => resolve({ width: w, height: h }), reject);
+          });
+
+          const { width: photoWidth, height: photoHeight } = photoInfo;
+          const minSize = Math.min(photoWidth, photoHeight);
+          const originX = (photoWidth - minSize) / 2;
+          const originY = (photoHeight - minSize) / 2;
+
+          const cropped = await ImageManipulator.manipulateAsync(
+            photoUri,
+            [
+              {
+                crop: {
+                  originX,
+                  originY,
+                  width: minSize,
+                  height: minSize,
+                },
+              },
+              { resize: { width: 1200 } } // Optimization: Resize to a reasonable 1200px
+            ],
+            { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+          );
+          finalPhotoUri = cropped.uri;
+          console.log("✅ Cropping & initial compression done.");
+        } catch (cropError) {
+          console.warn("⚠️ Cropping failed, sending original image:", cropError);
+        }
+      }
+
       // 2. Build file
-      const file = buildMediaFile(photoUri, mediaType);
+      const file = buildMediaFile(finalPhotoUri, mediaType);
 
       // 3. Build payload
       const payload = {
