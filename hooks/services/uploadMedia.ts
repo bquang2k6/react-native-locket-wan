@@ -1,6 +1,8 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "@/hooks/api";
+import { compressImage, compressVideo } from "./mediaCompression";
+
 
 export interface MediaUploadPayload {
   userData: {
@@ -134,12 +136,25 @@ export const uploadMedia = async (payload: MediaUploadPayload) => {
     formData.append("caption", finalCaption);
     formData.append("plan_id", plan_id);
 
-    // 5. Add media file (MUST be the last field)
+    // 5. Compress Media before adding to FormData
+    let finalUri = mediaInfo.file.uri;
+    try {
+      if (fileType === "image") {
+        finalUri = await compressImage(finalUri);
+      } else if (fileType === "video") {
+        finalUri = await compressVideo(finalUri);
+      }
+    } catch (compressionError) {
+      console.warn("⚠️ Compression failed, using original file:", compressionError);
+    }
+
+    // 6. Add media file (MUST be the last field)
     const fileToUpload = {
-      uri: mediaInfo.file.uri,
+      uri: finalUri,
       name: mediaInfo.file.name,
       type: mediaInfo.file.type || (fileType === "image" ? "image/jpeg" : "video/mp4"),
     } as any;
+
 
     formData.append(fileType === "image" ? "images" : "videos", fileToUpload);
 
