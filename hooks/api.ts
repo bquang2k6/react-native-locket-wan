@@ -84,7 +84,11 @@ setInterval(initializeApiUrl, 30000);
  * =========================
  */
 const createApiUrlString = (path: string) => `${BASE_API_URL}${path}`;
-const createDbApiUrlString = (path: string) => `${process.env.EXPO_PUBLIC_BASE_API_URL_DB || ""}${path}`;
+const createDbApiUrlString = (path: string) => {
+  const dbUrl = process.env.EXPO_PUBLIC_BASE_API_URL_DB || BASE_API_URL;
+  return `${dbUrl}${path}`;
+};
+
 const createWsUrlString = (path: string) => `${BASE_WS_API_URL}${path}`;
 
 // Chat API helper: Uses the WebSocket server URL but with HTTPS protocol (not WSS)
