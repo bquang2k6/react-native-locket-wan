@@ -19,18 +19,18 @@ export default function ThemeSelectionScreen() {
             <Stack.Screen
                 options={{ headerShown: false }}
             />
-            
+
 
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => router.back()}>
-                    <Text style={{ fontSize: 24 }}>←</Text>
+                    <Text style={{ fontSize: 24, marginBottom: 5, color: colors["base-content"] }}>←</Text>
                 </TouchableOpacity>
 
                 <Text style={[styles.headerTitle, { color: colors["base-content"] }]}>
                     Custom Theme
                 </Text>
 
-                <View style={{ width: 240 }} /> {/* spacer cân giữa */}
+                <View style={{ width: 240 }} />
             </View>
 
 

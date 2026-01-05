@@ -23,126 +23,7 @@ import { fetchFriends, Friend } from '../../../hooks/services/friendsService';
 import { fetchServerMoments, sendReaction, deleteServerMoment, TransformedMoment } from '../../../hooks/services/historyService';
 import { useTheme } from '@/context/ThemeContext';
 
-// Memoized slide component to prevent unnecessary re-renders
-const ModalSlide = React.memo(({
-  item,
-  index,
-  activeIndex,
-  creatorName,
-  creatorAvatar,
-  onClose,
-  renderOverlayIcon,
-  reactionInput,
-  onReactionInputChange,
-  onSendReaction,
-  quickEmojis,
-  selectedEmoji,
-  onDelete,
-  isOwner
-}: any) => {
-  const { colors } = useTheme();
-  return (
-    <View style={styles.modalSlide}>
-      <View style={styles.modalContent}>
-        <View style={styles.modalUserHeader}>
-          <Image source={{ uri: creatorAvatar }} style={[styles.modalUserAvatar, { borderColor: colors.primary }]} />
-          <View>
-            <Text style={[styles.modalUserName, { color: colors["base-content"] }]}>{creatorName}</Text>
-            <Text style={[styles.modalUserTime, { color: colors["base-content"], opacity: 0.6 }]}>
-              {new Date(item.date).toLocaleString('vi-VN', {
-                hour: '2-digit',
-                minute: '2-digit',
-                day: '2-digit',
-                month: '2-digit',
-              })}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.mediaPreviewOuter}>
-          <View style={styles.mediaPreviewContainer}>
-            {item.video_url ? (
-              <Video
-                source={{ uri: item.video_url }}
-                style={styles.mediaPreview}
-                resizeMode={ResizeMode.COVER}
-                shouldPlay={activeIndex === index}
-                isLooping
-              />
-            ) : (
-              <Image
-                source={{ uri: (item.image_url || item.thumbnail_url) as string }}
-                style={styles.mediaPreview}
-                contentFit="cover"
-              />
-            )}
-
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-
-            {isOwner && (
-              <TouchableOpacity style={styles.deleteButtonTop} onPress={() => onDelete(item)}>
-                <Feather name="trash-2" size={20} color="#fff" />
-              </TouchableOpacity>
-            )}
-
-            {item.captions?.[0] && (
-              <View style={styles.captionContainer}>
-                <LinearGradient
-                  colors={item.captions[0].background?.colors?.length >= 2
-                    ? [item.captions[0].background.colors[0], item.captions[0].background.colors[1]]
-                    : ['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.6)']}
-                  style={styles.captionBadge}
-                >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                    {item.captions[0].icon && renderOverlayIcon(item.captions[0].icon)}
-                    <Text style={[styles.captionText, { color: item.captions[0].text_color || '#fff' }]}>
-                      {item.captions[0].caption}
-                    </Text>
-                  </View>
-                </LinearGradient>
-              </View>
-            )}
-          </View>
-        </View>
-
-        <View style={styles.interactionContainer}>
-          <View style={styles.reactionContainer}>
-            <TextInput
-              style={styles.reactionInput}
-              placeholder="Nhập icon"
-              placeholderTextColor="rgba(255,255,255,0.6)"
-              value={activeIndex === index ? reactionInput : ""}
-              onChangeText={onReactionInputChange}
-            />
-            <View style={styles.quickEmojis}>
-              {quickEmojis.slice(0, 4).map((emoji: string) => (
-                <TouchableOpacity
-                  key={emoji}
-                  style={[
-                    styles.emojiButton,
-                    (activeIndex === index && (selectedEmoji === emoji || reactionInput === emoji)) && styles.emojiButtonSelected,
-                  ]}
-                  onPress={() => onSendReaction(emoji)}
-                >
-                  <Text style={styles.emojiText}>{emoji}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <TouchableOpacity
-              style={[styles.sendButton, (!reactionInput.trim() || activeIndex !== index) && styles.sendButtonDisabled]}
-              disabled={!reactionInput.trim() || activeIndex !== index}
-              onPress={() => onSendReaction(reactionInput)}
-            >
-              <Feather name="send" size={16} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-});
+import ModalSlide from '@/components/History/ModalSlide';
 
 const { width, height } = Dimensions.get('window');
 
@@ -213,11 +94,11 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
     }
   }, [user?.localId, pageToken, loadingServer, hasMore, fetchErrorCount, selectedFriendUid]);
 
-  useEffect(() => {
-    if (user?.localId) {
-      loadMoments(false, 50); // Initial load with 50 items
-    }
-  }, [user?.localId]);
+  // useEffect(() => {
+  //   if (user?.localId) {
+  //     loadMoments(false, 50); // Initial load with 50 items
+  //   }
+  // }, [user?.localId]);
 
   const handleSelectFriend = useCallback((uid: string | null, name: string) => {
     console.log("Selecting friend:", name, uid);
@@ -517,7 +398,7 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
                     source={{ uri: friend.profilePic || friend.profilePicture || "/prvlocket.png" }}
                     style={[styles.friendAvatar, { borderColor: colors["base-300"] }]}
                   />
-                  <Text style={styles.friendName}>
+                  <Text style={[styles.friendName, { color: colors["base-content"] }]}>
                     {friend.firstName} {friend.lastName}
                   </Text>
                 </TouchableOpacity>
@@ -543,8 +424,8 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
 
           <FlatList
             data={displayPosts}
-            keyExtractor={(item) => `detail-${item.id}`}
-            renderItem={({ item, index }: any) => (
+            keyExtractor={(item, index) => `detail-${item.id}-${index}`}
+            renderItem={({ item, index }) => (
               <ModalSlide
                 item={item}
                 index={index}
@@ -560,12 +441,16 @@ const HistoryTab = ({ goToPage }: { goToPage: (page: string) => void }) => {
                 selectedEmoji={selectedEmoji}
                 onDelete={handleDelete}
                 isOwner={item.isOwner}
+                friendDetails={friendDetails}
+                user={user}
               />
             )}
             pagingEnabled
-            horizontal={false}
+            snapToInterval={height}
+            snapToAlignment="start"
+            decelerationRate="fast"
             initialScrollIndex={activeIndex}
-            getItemLayout={(data, index) => ({
+            getItemLayout={(_, index) => ({
               length: height,
               offset: height * index,
               index,
@@ -806,16 +691,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.95)',
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 100,
   },
   modalContent: {
     width: '100%',
     alignItems: 'center',
   },
   mediaPreviewOuter: {
-    width: width - 40,
+    width: width - 0,
     aspectRatio: 1,
     borderRadius: 40,
-    borderWidth: 3,
+    borderWidth: 0,
     // borderColor: '#3b82f6', // handled inline
     overflow: 'hidden',
   },

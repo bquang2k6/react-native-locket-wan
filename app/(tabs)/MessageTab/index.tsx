@@ -105,7 +105,7 @@ export default function ChatListPage() {
           const friends = JSON.parse(friendsStr);
           setFriendDetails(friends);
           console.log('👥 Loaded friends:', friends.length);
-          console.log('👥 First friend:', friends[0]);
+          // console.log('👥 First friend:', friends[0]);
         } else {
           console.log('⚠️ No friendDetails in AsyncStorage');
         }
@@ -179,7 +179,7 @@ export default function ChatListPage() {
                 const cachedUser = userCacheRef.current.get(item.with_user);
                 userName = cachedUser.name;
                 avatarUrl = cachedUser.avatar;
-                console.log('💾 Using cached user:', item.with_user, '→', userName);
+                // console.log('💾 Using cached user:', item.with_user, '→', userName);
               } else {
                 try {
                   // Fetch user details from API
@@ -211,7 +211,7 @@ export default function ChatListPage() {
                       avatar: avatarUrl,
                     });
 
-                    console.log('👤 Fetched user:', item.with_user, '→', userName);
+                    // console.log('👤 Fetched user:', item.with_user, '→', userName);
                   }
                 } catch (err) {
                   console.log('⚠️ Failed to fetch user:', item.with_user);
@@ -531,7 +531,7 @@ export default function ChatListPage() {
           chatMessages.map((msg) => {
             const isOwn = msg.sender === (user?.uid || user?.localId);
             const formattedTime = formatMessageTime(
-              msg.create_time ?? msg.createdAt ?? msg.created_at ?? msg.timestamp
+              msg.create_time ?? msg.created_at ?? msg.timestamp
             );
 
             return (

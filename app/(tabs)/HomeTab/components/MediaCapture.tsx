@@ -44,23 +44,36 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
       {/* Nút chụp ảnh / quay video */}
       <Pressable
         style={captureStyles.buttonArea}
-        onPress={onCapture}
+        onPress={isRecording ? undefined : onCapture}
         onLongPress={onStartRecording}
         onPressOut={onStopRecording}
         delayLongPress={500}
         android_ripple={{ color: "rgba(255,255,255,0.3)" }}
       >
-        <View style={[
-          captureStyles.captureButton,
-          { backgroundColor: colors["base-content"], borderColor: colors["base-100"] },
-          isRecording && captureStyles.recordingButton
-        ]}>
-          {isRecording && <View style={captureStyles.recordingDot} />}
+        <View style={captureStyles.captureWrapper}>
+          {/* Vòng ngoài */}
+          <View
+            style={[
+              captureStyles.outerRing,
+              isRecording && captureStyles.outerRingRecording, { backgroundColor: colors["base-300"] }, { borderColor: colors["neutral"] },
+            ]}
+          />
+
+          {/* Nút chính */}
+          <View
+            style={[
+              captureStyles.captureButton,
+              { backgroundColor: colors["base-content"], borderColor: colors["base-content"] },
+              isRecording && captureStyles.recordingButton,
+            ]}
+          >
+            {isRecording && <View style={captureStyles.recordingDot} />}
+          </View>
         </View>
-      </Pressable>
+      </Pressable >
 
       {/* Nút đổi camera */}
-      <Pressable
+      < Pressable
         style={captureStyles.buttonArea}
         onPress={onFlipCamera}
         android_ripple={{ color: "rgba(255,255,255,0.2)" }}
@@ -68,8 +81,8 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
         <View style={captureStyles.actionButton}>
           <MaterialIcons name="flip-camera-ios" size={30} color={colors["base-content"]} />
         </View>
-      </Pressable>
-    </View>
+      </Pressable >
+    </View >
   );
 };
 
@@ -89,8 +102,8 @@ const captureStyles = StyleSheet.create({
     borderRadius: 40,
   },
   captureButton: {
-    width: 78,
-    height: 78,
+    width: 77,
+    height: 77,
     borderRadius: 100,
     backgroundColor: "white",
     borderWidth: 4,
@@ -116,6 +129,25 @@ const captureStyles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     backgroundColor: "#ff3b30",
+  },
+  captureWrapper: {
+    width: 77,
+    height: 77,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  outerRing: {
+    position: "absolute",
+    width: 90,
+    height: 90,
+    borderRadius: 45,
+    borderWidth: 4,
+    borderColor: "rgba(255,255,255,0.4)",
+  },
+  outerRingRecording: {
+    borderColor: "#ffffffff",
+    opacity: 0.8,
+    transform: [{ scale: 1.1 }],
   },
 });
 

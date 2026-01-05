@@ -80,20 +80,21 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
       items: [
         { id: 'Palette', label: 'Cài đặt giao diện', icon: Palette, href: '/theme' },
         { id: 'Package', label: 'Quản lý gói đăng ký', icon: Package, href: '/upgrade' },
-        { id: 'History', label: 'Lịch sử hình thành', icon: History, href: '/timeline' },
-      ],
-    },
-    {
-      title: 'Tài khoản',
-      items: [
-        { id: 'User', label: 'Hồ sơ', icon: User, href: '/profile' },
-        { id: 'Camera', label: 'Quyền riêng tư', icon: Camera, href: '/docs' },
         { id: 'Setting', label: 'Cài đặt', icon: Settings, action: () => router.push('/settings') },
       ],
     },
     {
-      title: 'Hỗ trợ',
+      title: 'Hồ sơ',
       items: [
+        { id: 'User', label: 'Hồ sơ', icon: User, href: '/profile' },
+
+      ],
+    },
+    {
+      title: 'Về Locket Wan',
+      items: [
+        { id: 'Camera', label: 'Quyền riêng tư', icon: Camera, href: '/docs' },
+        { id: 'History', label: 'Lịch sử hình thành', icon: History, href: '/timeline' },
         { id: 'AlertCircle', label: 'Gửi đề xuất / Báo lỗi', icon: AlertCircle, href: 'https://wangtech.top' },
         { id: 'Gift', label: 'Ủng hộ dự án', icon: Gift, href: '  ' },
       ],
@@ -181,7 +182,7 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
         <View style={[
           styles.taskbar,
           {
-            backgroundColor: colors["base-100"], // Taskbar background
+            backgroundColor: colors["base-200"], // Taskbar background
             borderColor: colors["base-300"],
             opacity: 0.95
           }
@@ -190,7 +191,7 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
             {menuItems.map((item) => {
               const Icon = item.icon;
               const active = activeItem === item.id;
-              const iconColor = active ? colors.primary : colors["base-content"];
+              const iconColor = active ? colors.primary : colors["neutral"];
 
               return (
                 <TouchableOpacity
@@ -221,8 +222,8 @@ export default function LiquidGlassTaskbar({ goToPage, goToPageVertical }: Taskb
               style={styles.taskbarButton}
               onPress={() => setShowSidebar(true)}
             >
-              <Menu size={22} color={colors["base-content"]} strokeWidth={1.6} />
-              <Text style={[styles.taskbarLabel, { color: colors["base-content"] }]}>Danh mục</Text>
+              <Menu size={22} color={colors["neutral"]} strokeWidth={1.6} />
+              <Text style={[styles.taskbarLabel, { color: colors["neutral"] }]}>Danh mục</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -255,6 +256,7 @@ const styles = StyleSheet.create({
   },
   sidebarInner: {
     gap: 4,
+    marginTop: 30,
   },
   sidebarItem: {
     flexDirection: 'row',

@@ -45,7 +45,7 @@ const Listmsg: React.FC<ListmsgProps> = ({ messages, onSelect, loading }) => {
       extraData={messages} // Force re-render when messages change
       keyExtractor={(item) => item.uid}
       renderItem={({ item }) => {
-        console.log('🎨 Rendering item:', item.name);
+        // console.log('🎨 Rendering item:', item.name);
         return (
           <Uimsg
             name={item.name}

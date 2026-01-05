@@ -279,11 +279,13 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
       </View>
 
       {/* Content */}
-      {content && (
-        <View style={styles.contentContainer}>
-          <Text style={[styles.contentText, { color: colors["base-content"] }]}>{content}</Text>
-        </View>
-      )}
+      {
+        content && (
+          <View style={styles.contentContainer}>
+            <Text style={[styles.contentText, { color: colors["base-content"] }]}>{content}</Text>
+          </View>
+        )
+      }
 
       {/* Actions and Stats */}
       <View style={styles.footer}>
@@ -345,7 +347,7 @@ const PostCard = ({ post, onDeleted, currentUser }) => {
           )}
         </View>
       </View>
-    </View>
+    </View >
   );
 };
 

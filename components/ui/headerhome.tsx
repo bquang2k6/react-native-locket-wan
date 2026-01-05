@@ -71,7 +71,7 @@ export default function HomeHeader({
                 ? { uri: avatar }
                 : require("@/assets/images/default-profile.png")
             }
-            style={[headerStyles.avatar, { borderColor: colors["base-300"] }]}
+            style={[headerStyles.avatar, { borderColor: colors["neutral"] }]}
           />
         </Pressable>
       </View>
