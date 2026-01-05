@@ -52,7 +52,7 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
       >
         <View style={[
           captureStyles.captureButton,
-          { backgroundColor: colors["base-200"], borderColor: colors["base-100"] },
+          { backgroundColor: colors["base-content"], borderColor: colors["base-100"] },
           isRecording && captureStyles.recordingButton
         ]}>
           {isRecording && <View style={captureStyles.recordingDot} />}
@@ -89,8 +89,8 @@ const captureStyles = StyleSheet.create({
     borderRadius: 40,
   },
   captureButton: {
-    width: 80,
-    height: 80,
+    width: 78,
+    height: 78,
     borderRadius: 100,
     backgroundColor: "white",
     borderWidth: 4,

@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, initializeApiUrl } from '@/hooks/api'; // 🔥 chỉnh lại path cho đúng project bạn
 import { useEffect } from 'react';
+import { useTheme } from '@/context/ThemeContext';
 
 
 
@@ -25,6 +26,7 @@ const LoginScreen = () => {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
   useEffect(() => {
     const loadRemember = async () => {
       const remember = await AsyncStorage.getItem('rememberMe');
@@ -126,17 +128,16 @@ const LoginScreen = () => {
         style={styles.keyboardView}
       >
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { backgroundColor: colors["base-100"] }]}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.card}>
-            <Text style={styles.title}>Đăng Nhập Locket</Text>
-
+          <View style={[styles.card, { backgroundColor: colors["base-200"] }]}>
+            <Text style={[styles.title, { color: colors["base-content"] }]}>Đăng Nhập Locket</Text>
             <View style={styles.form}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
+                <Text style={[styles.label, { color: colors["base-content"] }]}>Email</Text>
                 <TextInput
-                  style={styles.input}
+                  style={[styles.input]}
                   placeholder="Nhập email"
                   placeholderTextColor="#999"
                   value={email}
@@ -147,7 +148,7 @@ const LoginScreen = () => {
               </View>
 
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Mật khẩu</Text>
+                <Text style={[styles.label, { color: colors["base-content"] }]}>Mật khẩu</Text>
                 <TextInput
                   style={styles.input}
                   placeholder="Nhập mật khẩu"
@@ -164,13 +165,13 @@ const LoginScreen = () => {
                 activeOpacity={0.7}
               >
                 <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                  {rememberMe && <Text style={styles.checkmark}>✓</Text>}
+                  {rememberMe && <Text style={[styles.checkmark]}>✓</Text>}
                 </View>
-                <Text style={styles.checkboxLabel}>Ghi nhớ đăng nhập</Text>
+                <Text style={[styles.checkboxLabel, { color: colors["base-content"] }]}>Ghi nhớ đăng nhập</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.button}
+                style={[styles.button, { backgroundColor: colors["base-300"] }]}
                 activeOpacity={0.8}
                 onPress={handleLogin}
                 disabled={loading}
@@ -178,7 +179,7 @@ const LoginScreen = () => {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.buttonText}>Đăng Nhập</Text>
+                  <Text style={[styles.buttonText, { color: colors["base-content"] }]}>Đăng Nhập</Text>
                 )}
               </TouchableOpacity>
 
@@ -192,7 +193,7 @@ const LoginScreen = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </SafeAreaView >
   );
 };
 
