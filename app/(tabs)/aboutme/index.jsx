@@ -267,7 +267,7 @@ const AboutMe = () => {
                 <View style={styles.qrSection}>
                     <View style={[styles.qrContainer, { backgroundColor: colors["base-100"] }]}>
                         <Image
-                            source={require("@/assets/images/banking_infor.png")}
+                            source={require("@/assets/images/banking-infor.png")}
                             style={styles.qrImage}
                             resizeMode="contain"
                         />

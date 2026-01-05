@@ -125,21 +125,32 @@ export const UploadQueue = {
             return;
         }
 
-        const netState = await NetInfo.fetch();
-        if (!netState.isConnected) {
-            console.log('📴 Offline, skipping queue processing');
-            return;
-        }
-
-        const queue = await UploadQueue.getQueue();
-        if (queue.length === 0) return;
-
         isProcessing = true;
-        console.log(`🔄 Processing queue: ${queue.length} items`);
 
         try {
+            const netState = await NetInfo.fetch();
+            if (!netState.isConnected) {
+                console.log('📴 Offline, skipping queue processing');
+                return;
+            }
+
+            const queue = await UploadQueue.getQueue();
+            if (queue.length === 0) {
+                console.log('📭 Queue is empty, nothing to process.');
+                return;
+            }
+
+            console.log(`🔄 Processing queue: ${queue.length} items`);
+
             for (const item of queue) {
                 try {
+                    // Check if item was removed from queue (e.g. manually) while processing
+                    const currentQueue = await UploadQueue.getQueue();
+                    if (!currentQueue.some(i => i.id === item.id)) {
+                        console.log(`⏭️ Item ${item.id} no longer in queue, skipping.`);
+                        continue;
+                    }
+
                     console.log(`🚀 Retrying upload: ${item.id}`);
                     // Check if file still exists
                     const fileInfo = await FileSystem.getInfoAsync(item.payload.mediaInfo.file.uri);
@@ -164,8 +175,11 @@ export const UploadQueue = {
 
                 } catch (error) {
                     console.error(`❌ Failed to process queue item ${item.id}:`, error);
+                    // Don't stop the whole queue if one item fails
                 }
             }
+        } catch (globalError) {
+            console.error('❌ Critical error in processQueue:', globalError);
         } finally {
             isProcessing = false;
             console.log('🏁 Queue processing finished.');

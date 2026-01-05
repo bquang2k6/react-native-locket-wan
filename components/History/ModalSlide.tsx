@@ -106,7 +106,7 @@ const ModalSlide = React.memo(({
 
                 <View style={styles.interactionContainer}>
                     {isOwner ? (
-                        <View style={[styles.activityButtonContainer, { backgroundColor: colors["base-300"], borderColor: colors["base-100"] }]}>
+                        <View style={styles.activityButtonContainer}>
                             <TouchableOpacity
                                 onPress={() => setIsActivityModalOpen(true)}
                                 style={[styles.activityButton, { backgroundColor: colors["base-300"] + "E6" }]}
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     activityButtonContainer: {
         width: '100%',
         alignItems: 'center',
-        borderRadius: 40,
+
     },
     activityButton: {
         flexDirection: 'row',
@@ -324,6 +324,8 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         height: 54,
         width: '100%',
+        borderRadius: 40,
+        borderWidth: 1,
     },
     activityIcon: {
         width: 24,
