@@ -104,14 +104,14 @@ export default function PostCard({ post, onAddComment, friendDetails = [] }: Pos
                 style={[
                     styles.imageFrame,
                     {
-                        width: Math.min(width * 0.7, firstItem.metadata?.width || width * 0.7),
-                        height: Math.min(height * 0.7, firstItem.metadata?.height || height * 0.7),
+                        width: Math.min(width * 0.8, firstItem.metadata?.width || width * 0.8),
+                        height: Math.min(height * 0.8, firstItem.metadata?.height || height * 0.8),
                     },
                 ]}
             >
                 <Stack
                     randomRotation
-                    sensitivity={180}
+                    sensitivity={50}
                     sendToBackOnClick
                     cards={images.map((src, i) => {
                         const item = post.items[i];
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     },
     imageFrame: {
         borderRadius: 16,
-        overflow: "hidden",
+        // overflow: "hidden", // Removed to prevent clipping of rotated cards
     },
     cardContent: {
         width: "100%",
@@ -272,7 +272,7 @@ const styles = StyleSheet.create({
         fontSize: 20,
     },
     userInfoContainer: {
-        width: width * 0.8,
+        width: width * 0.9,
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
