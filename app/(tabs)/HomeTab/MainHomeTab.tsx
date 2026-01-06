@@ -303,11 +303,9 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     setIsCapturing(true);
     try {
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 1, // Full quality for now, processing happens on send
-        skipProcessing: true,
-        base64: false,
-        shutterSound: false,
-        mirror: false,
+        quality: 1,
+        skipProcessing: false, // 👈 BẮT BUỘC
+        exif: true,
       });
 
       if (photo?.uri) {
@@ -423,17 +421,19 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
 
       // 4. Decoupled Processing: Crop image to 1:1 square BEFORE uploading
       if (mediaType === "image") {
-        console.log("✂️ Cropping image to 1:1 square before upload...");
         try {
-          // Get original dimensions
-          const photoInfo = await new Promise<{ width: number, height: number }>((resolve, reject) => {
-            Image.getSize(photoUri, (w, h) => resolve({ width: w, height: h }), reject);
-          });
+          const photoInfo = await ImageManipulator.manipulateAsync(
+            photoUri,
+            [],
+            { format: ImageManipulator.SaveFormat.JPEG }
+          );
 
-          const { width: photoWidth, height: photoHeight } = photoInfo;
-          const minSize = Math.min(photoWidth, photoHeight);
-          const originX = (photoWidth - minSize) / 2;
-          const originY = (photoHeight - minSize) / 2;
+          const photoWidth = photoInfo.width!;
+          const photoHeight = photoInfo.height!;
+
+          const cropSize = Math.min(photoWidth, photoHeight);
+          const originX = Math.floor((photoWidth - cropSize) / 2);
+          const originY = Math.floor((photoHeight - cropSize) / 2);
 
           const cropped = await ImageManipulator.manipulateAsync(
             photoUri,
@@ -442,18 +442,20 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
                 crop: {
                   originX,
                   originY,
-                  width: minSize,
-                  height: minSize,
+                  width: cropSize,
+                  height: cropSize,
                 },
               },
-              { resize: { width: 1200 } } // Optimization: Resize to a reasonable 1200px
+              { resize: { width: 1200 } },
             ],
-            { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG }
+            {
+              compress: 0.8,
+              format: ImageManipulator.SaveFormat.JPEG,
+            }
           );
           finalPhotoUri = cropped.uri;
-          console.log("✅ Cropping & initial compression done.");
-        } catch (cropError) {
-          console.warn("⚠️ Cropping failed, sending original image:", cropError);
+        } catch (e) {
+          console.warn("Crop failed:", e);
         }
       }
 
@@ -599,7 +601,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
               style={[
                 styles.cameraBox,
                 { backgroundColor: colors["base-200"] },
-                facing === "front" && { transform: [{ scaleX: -1 }] },]} />
+                facing === "front" ]} />
           )
         ) : (
           <CameraView
