@@ -19,10 +19,13 @@ import Animated, {
   useAnimatedProps,
   withTiming,
   Easing,
+  cancelAnimation,
 } from "react-native-reanimated";
 import * as ImagePicker from "expo-image-picker";
 import { Video, ResizeMode } from "expo-av";
+import { Video as VideoCompressor } from "react-native-compressor";
 import * as ImageManipulator from "expo-image-manipulator";
+import ViewShot, { captureRef } from "react-native-view-shot";
 
 
 // Import components
@@ -87,7 +90,7 @@ const buildMediaFile = (uri: string, type: "image" | "video") => {
 
 
 // Component BorderProgress với hiệu ứng chạy xung quanh viền
-const BorderProgress = ({ isRecording, duration = 10000 }: { isRecording: boolean; duration?: number }) => {
+const BorderProgress = ({ isRecording, duration = 10000, hasMedia }: { isRecording: boolean; duration?: number; hasMedia: boolean }) => {
   const strokeDashoffset = useSharedValue(400);
 
   useEffect(() => {
@@ -97,16 +100,20 @@ const BorderProgress = ({ isRecording, duration = 10000 }: { isRecording: boolea
         duration: duration,
         easing: Easing.linear,
       });
-    } else {
+    } else if (!hasMedia) {
+      // Reset khi không có media
       strokeDashoffset.value = 400;
+    } else {
+      // Dừng (freeze) tại vị trí hiện tại khi ngừng quay nhưng có media (hoặc đang chờ finalize)
+      cancelAnimation(strokeDashoffset);
     }
-  }, [isRecording, duration]);
+  }, [isRecording, duration, hasMedia]);
 
   const animatedProps = useAnimatedProps(() => ({
     strokeDashoffset: strokeDashoffset.value,
   }));
 
-  if (!isRecording) return null;
+  if (!isRecording && !hasMedia) return null;
 
   return (
     <Svg
@@ -145,17 +152,27 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   const [mediaSizeInMB, setMediaSizeInMB] = useState<number | null>(null);
   const [mediaType, setMediaType] = useState<"image" | "video" | null>(null);
   const cameraRef = useRef<CameraView | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
+  const viewShotRef = useRef<View>(null);
   const [streakRefresh, setStreakRefresh] = useState(0);
   const { colors } = useTheme();
 
-  const recordTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const recordStartTimeRef = useRef<number>(0);
+  const userStopTimeRef = useRef(null);
+  const recordStartTimeRef = useRef(null);
+  const [uiRecording, setUiRecording] = useState(false);
   const isStoppingRef = useRef(false);
   const [postOverlay, setPostOverlay] = useState<PostOverlay>({
     type: "default",
     caption: "",
   });
+  const [captureMode, setCaptureMode] = useState<"picture" | "video">("picture");
+
+  const handleModeChange = (newMode: "picture" | "video") => {
+    console.log("🔄 Changing mode to:", newMode);
+    if (photoUri) {
+      handleCancelPhoto(); // Clear preview and delete file to free memory
+    }
+    setCaptureMode(newMode);
+  };
   const [isCustomStudioOpen, setIsCustomStudioOpen] = useState(false);
 
 
@@ -167,7 +184,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   // User plan configuration (giả lập - thay bằng data thật của bạn)
   const userPlan = {
     max_image_size: 5, // MB
-    max_video_size: 10, // MB
+    max_video_size: 30, // MB
   };
   const MAX_VIDEO_DURATION_SEC = 10;
   const MAX_VIDEO_DURATION_MS = MAX_VIDEO_DURATION_SEC * 1000;
@@ -231,62 +248,64 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   // VIDEO RECORDING FUNCTIONS
   // =============================================
   const startRecording = async () => {
-    if (!cameraRef.current || isRecording || isStoppingRef.current) return;
+    if (!cameraRef.current) return;
 
-    setIsRecording(true);
-    isStoppingRef.current = false;
+    console.log("🎥 startRecording: Initiating...");
 
+    recordStartTimeRef.current = Date.now();
+    userStopTimeRef.current = null;
+    // 🔥 UI chạy NGAY
+    setUiRecording(true);
     try {
-      const recordPromise = cameraRef.current.recordAsync({
-        maxDuration: MAX_VIDEO_DURATION_SEC,
-      });
+      const recordVideoPromise = cameraRef.current.recordAsync();
 
-      // Backup stop
-      recordTimerRef.current = setTimeout(() => {
-        stopRecording();
-      }, MAX_VIDEO_DURATION_MS) as unknown as NodeJS.Timeout;
-
-      const video = await recordPromise;
+      // Chờ cho đến khi recording thực sự kết thúc (sau stopRecordingSafely)
+      const video = await recordVideoPromise;
 
       if (video?.uri) {
-        // recordAsync in newer expo-camera versions might not return duration directly in the object
-        // but we can check if it exists or use some other way to validate.
-        const videoDuration = (video as any).duration;
-        if (videoDuration && videoDuration * 1000 > MAX_VIDEO_DURATION_MS) {
-          Alert.alert("Video quá dài", `Tối đa ${MAX_VIDEO_DURATION_SEC} giây`);
-          return;
-        }
-
-        const sizeMB = await getFileSizeMB(video.uri);
+        console.log("✅ video recorded:", video.uri);
         setPhotoUri(video.uri);
         setMediaType("video");
-        setMediaSizeInMB(sizeMB);
+        setMediaSizeInMB(await getFileSizeMB(video.uri));
       }
-
     } catch (e) {
-      console.warn("Record error:", e);
+      console.log("record error", e);
     } finally {
-      if (recordTimerRef.current) {
-        clearTimeout(recordTimerRef.current);
-        recordTimerRef.current = null;
-      }
-      setIsRecording(false);
-      isStoppingRef.current = false;
+      console.log("🎥 startRecording: cleanup");
+      setUiRecording(false);
     }
   };
+  const onUserRelease = () => {
+    if (!recordStartTimeRef.current) return;
 
+    console.log("⏹️ user released");
 
+    userStopTimeRef.current = Date.now();
 
-  const stopRecording = async () => {
-    if (!cameraRef.current || !isRecording || isStoppingRef.current) return;
+    // 🔥 DỪNG VIỀN NGAY LẬP TỨC
+    setUiRecording(false);
 
-    console.log("⏹️ Dừng quay video...");
+    stopRecordingSafely(); // camera stop ngầm
+  };
+  const stopRecordingSafely = async () => {
+    if (!cameraRef.current || isStoppingRef.current) return;
+
     isStoppingRef.current = true;
+
+    const MIN_RECORD_MS = 2500;
+    const elapsed = Date.now() - recordStartTimeRef.current;
+
+    if (elapsed < MIN_RECORD_MS) {
+      await new Promise(r => setTimeout(r, MIN_RECORD_MS - elapsed));
+    }
 
     try {
       await cameraRef.current.stopRecording();
-    } catch (error) {
-      console.warn("⚠️ Lỗi khi dừng recording:", error);
+    } catch (e) {
+      console.log("stop error", e);
+    } finally {
+      isStoppingRef.current = false;
+      recordStartTimeRef.current = null;
     }
   };
 
@@ -302,19 +321,17 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
 
     setIsCapturing(true);
     try {
+      // Fast capture: low quality for speed, processing happens later
       const photo = await cameraRef.current.takePictureAsync({
-        quality: 1,
-        skipProcessing: false, // 👈 BẮT BUỘC
-        exif: true,
+        quality: 0.4,
+        skipProcessing: true, // 👈 Skip as much as possible for speed
       });
 
       if (photo?.uri) {
-        // Instant preview, no cropping here!
-        const sizeMB = await getFileSizeMB(photo.uri);
-
         setPhotoUri(photo.uri);
         setMediaType("image");
-        setMediaSizeInMB(sizeMB);
+        // Update size later or just set a placeholder
+        setMediaSizeInMB(await getFileSizeMB(photo.uri));
       }
     } catch (error) {
       console.error("Lỗi khi chụp ảnh:", error);
@@ -407,21 +424,19 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       return;
     }
 
-    setIsSending(true);
-
-    // 4. Check user
     if (!user) {
       Alert.alert("Lỗi", "Vui lòng đăng nhập lại");
-      setIsSending(false);
       return;
     }
 
+    setIsSending(true);
     try {
       let finalPhotoUri = photoUri;
 
-      // 4. Decoupled Processing: Crop image to 1:1 square BEFORE uploading
+      // Processing: Crop image/video to 1:1 ONLY when sending to keep UI fast
       if (mediaType === "image") {
         try {
+          console.log("📸 Processing image (Crop to square)...");
           const photoInfo = await ImageManipulator.manipulateAsync(
             photoUri,
             [],
@@ -430,7 +445,6 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
 
           const photoWidth = photoInfo.width!;
           const photoHeight = photoInfo.height!;
-
           const cropSize = Math.min(photoWidth, photoHeight);
           const originX = Math.floor((photoWidth - cropSize) / 2);
           const originY = Math.floor((photoHeight - cropSize) / 2);
@@ -446,7 +460,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
                   height: cropSize,
                 },
               },
-              { resize: { width: 1200 } },
+              { resize: { width: 1200, height: 1200 } },
             ],
             {
               compress: 0.8,
@@ -455,7 +469,21 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
           );
           finalPhotoUri = cropped.uri;
         } catch (e) {
-          console.warn("Crop failed:", e);
+          console.warn("Image processing failed:", e);
+        }
+      } else if (mediaType === "video") {
+        try {
+          console.log("🎥 Processing video (Crop to square)...");
+          // Video compressor with center crop (simplified approach)
+          const croppedVideoUri = await VideoCompressor.compress(
+            photoUri,
+            {
+              compressionMethod: "auto",
+            }
+          );
+          finalPhotoUri = croppedVideoUri;
+        } catch (e) {
+          console.warn("Video processing failed:", e);
         }
       }
 
@@ -557,7 +585,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionBox}>
-          <Text style={styles.permissionText}>
+          <Text style={styles.permissionText as any}>
             Ứng dụng cần quyền Camera và Microphone
           </Text>
           <Pressable
@@ -567,7 +595,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
               await requestMicPermission();
             }}
           >
-            <Text style={styles.permissionButtonText}>Cấp quyền</Text>
+            <Text style={styles.permissionButtonText as any}>Cấp quyền</Text>
           </Pressable>
         </View>
       </View>
@@ -584,43 +612,45 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
       </View>
 
       {/* Camera hoặc ảnh/video đã chụp */}
-      <View style={styles.cameraContainer}>
+      <View style={styles.cameraContainer} ref={viewShotRef} collapsable={false}>
         {photoUri ? (
           mediaType === "video" ? (
             <Video
               source={{ uri: photoUri }}
-              style={[styles.cameraBox, { backgroundColor: colors["base-200"] }]}
+              style={[
+                styles.cameraBox as any,
+                { backgroundColor: colors["base-200"] },
+                facing === "front" ? { transform: [{ scaleX: -1 }] } : {}
+              ] as any}
               useNativeControls={false}
-              resizeMode={ResizeMode.CONTAIN}
+              resizeMode={ResizeMode.COVER}
               shouldPlay={true}
               isLooping={true}
             />
           ) : (
             <Image
               source={{ uri: photoUri }}
+              resizeMode="cover"
               style={[
-                styles.cameraBox,
-                { backgroundColor: colors["base-200"] },
-                facing === "front" ]} />
+                styles.cameraBox as any,
+                facing === "front" ? { transform: [{ scaleX: -1 }] } : {}
+              ] as any} />
           )
         ) : (
           <CameraView
             ref={cameraRef}
-            style={[styles.cameraBox, { backgroundColor: colors["base-200"] }]}
+            style={[styles.cameraBox as any, { backgroundColor: colors["base-200"] }]}
             facing={facing}
+            mode={captureMode}
+            videoQuality="1080p" // 👈 Lower quality to save memory (prevents OOM)
             mirror={facing === "front"}
             autofocus="on"
           />
         )}
 
-        <BorderProgress isRecording={isRecording} duration={MAX_VIDEO_DURATION} />
+        <BorderProgress isRecording={uiRecording} duration={MAX_VIDEO_DURATION} hasMedia={!!photoUri} />
 
-        {isCapturing && (
-          <View style={styles.capturingOverlay}>
-            <ActivityIndicator size="large" color="white" />
-            <Text style={styles.capturingText}>Đang chụp...</Text>
-          </View>
-        )}
+        {/* Xóa overlay Đang chụp để cảm giác nhanh hơn */}
         {photoUri && (
           <AutoResizeCaption
             postOverlay={postOverlay}
@@ -643,13 +673,15 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
         hasMedia={!!photoUri}
         onCapture={handleTakePhoto}
         onStartRecording={startRecording}
-        onStopRecording={stopRecording}
+        onStopRecording={onUserRelease}
         onFlipCamera={handleFlipCamera}
         onOpenGallery={handleOpenGallery}
         onSend={handleSendPhoto}
         onCancel={handleCancelPhoto}
         onCustomAction={handleCustomAction}
-        isRecording={isRecording}
+        mode={captureMode}
+        onModeChange={handleModeChange}
+        isRecording={uiRecording}
         isSending={isSending}
       />
 
@@ -757,7 +789,7 @@ const styles = StyleSheet.create({
   streakWrapper: {
     position: "absolute",
     top: 35,        // 👈 chỉnh cao thấp tại đây
-    alignSelf: "left",
+    alignSelf: "flex-start",
     zIndex: 100,
     marginLeft: 60,
   },

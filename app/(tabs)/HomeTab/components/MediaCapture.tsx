@@ -4,6 +4,7 @@
 import React from "react";
 import { View, Pressable, StyleSheet, Dimensions } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
+import { useTheme } from "@/context/ThemeContext";
 
 const { width } = Dimensions.get("window");
 
@@ -14,9 +15,9 @@ interface MediaCaptureProps {
   onFlipCamera: () => void;
   onOpenGallery: () => void;
   isRecording: boolean;
+  mode: "picture" | "video";
+  onModeChange: (mode: "picture" | "video") => void;
 }
-
-import { useTheme } from "@/context/ThemeContext";
 
 export const MediaCapture: React.FC<MediaCaptureProps> = ({
   onCapture,
@@ -25,75 +26,129 @@ export const MediaCapture: React.FC<MediaCaptureProps> = ({
   onFlipCamera,
   onOpenGallery,
   isRecording,
+  mode,
+  onModeChange,
 }) => {
   const { colors } = useTheme();
 
   return (
-    <View style={captureStyles.buttonRow}>
-      {/* Nút mở thư viện */}
-      <Pressable
-        style={captureStyles.buttonArea}
-        onPress={onOpenGallery}
-        android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-      >
-        <View style={captureStyles.actionButton}>
-          <FontAwesome name="photo" size={28} color={colors["base-content"]} />
-        </View>
-      </Pressable>
-
-      {/* Nút chụp ảnh / quay video */}
-      <Pressable
-        style={captureStyles.buttonArea}
-        onPress={isRecording ? undefined : onCapture}
-        onLongPress={onStartRecording}
-        onPressOut={onStopRecording}
-        delayLongPress={500}
-        android_ripple={{ color: "rgba(255,255,255,0.3)" }}
-      >
-        <View style={captureStyles.captureWrapper}>
-          {/* Vòng ngoài */}
-          <View
-            style={[
-              captureStyles.outerRing,
-              isRecording && captureStyles.outerRingRecording, { backgroundColor: colors["base-300"] }, { borderColor: colors["neutral"] },
-            ]}
+    <View style={captureStyles.container}>
+      {/* Nút chuyển đổi chế độ */}
+      <View style={captureStyles.modeToggleContainer}>
+        <Pressable
+          style={[
+            captureStyles.modeButton,
+            mode === "picture" && { backgroundColor: "rgba(255,255,255,0.2)" }
+          ]}
+          onPress={() => onModeChange("picture")}
+        >
+          <MaterialIcons
+            name="camera-alt"
+            size={20}
+            color={mode === "picture" ? colors["base-content"] : "gray"}
           />
+        </Pressable>
+        <Pressable
+          style={[
+            captureStyles.modeButton,
+            mode === "video" && { backgroundColor: "rgba(255,255,255,0.2)" }
+          ]}
+          onPress={() => onModeChange("video")}
+        >
+          <MaterialIcons
+            name="videocam"
+            size={20}
+            color={mode === "video" ? colors["base-content"] : "gray"}
+          />
+        </Pressable>
+      </View>
 
-          {/* Nút chính */}
-          <View
-            style={[
-              captureStyles.captureButton,
-              { backgroundColor: colors["base-content"], borderColor: colors["base-content"] },
-              isRecording && captureStyles.recordingButton,
-            ]}
-          >
-            {isRecording && <View style={captureStyles.recordingDot} />}
+      <View style={captureStyles.buttonRow}>
+        {/* Nút mở thư viện */}
+        <Pressable
+          style={captureStyles.buttonArea}
+          onPress={onOpenGallery}
+          android_ripple={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          <View style={captureStyles.actionButton}>
+            <FontAwesome name="photo" size={28} color={colors["base-content"]} />
           </View>
-        </View>
-      </Pressable >
+        </Pressable>
 
-      {/* Nút đổi camera */}
-      < Pressable
-        style={captureStyles.buttonArea}
-        onPress={onFlipCamera}
-        android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-      >
-        <View style={captureStyles.actionButton}>
-          <MaterialIcons name="flip-camera-ios" size={30} color={colors["base-content"]} />
-        </View>
-      </Pressable >
-    </View >
+        {/* Nút chụp ảnh / quay video */}
+        <Pressable
+          style={captureStyles.buttonArea}
+          onPress={isRecording ? undefined : (mode === "picture" ? onCapture : undefined)}
+          onLongPress={mode === "video" ? onStartRecording : undefined}
+          onPressOut={mode === "video" ? onStopRecording : undefined}
+          delayLongPress={500}
+          android_ripple={{ color: "rgba(255,255,255,0.3)" }}
+        >
+          <View style={captureStyles.captureWrapper}>
+            {/* Vòng ngoài */}
+            <View
+              style={[
+                captureStyles.outerRing,
+                isRecording && captureStyles.outerRingRecording,
+                { backgroundColor: colors["base-300"], borderColor: colors["neutral"] },
+              ]}
+            />
+
+            {/* Nút chính */}
+            <View
+              style={[
+                captureStyles.captureButton,
+                { backgroundColor: colors["base-content"], borderColor: colors["base-content"] },
+                isRecording && captureStyles.recordingButton,
+              ]}
+            >
+              {isRecording && <View />}
+            </View>
+          </View>
+        </Pressable >
+
+        {/* Nút đổi camera */}
+        <Pressable
+          style={captureStyles.buttonArea}
+          onPress={onFlipCamera}
+          android_ripple={{ color: "rgba(255,255,255,0.2)" }}
+        >
+          <View style={captureStyles.actionButton}>
+            <MaterialIcons name="flip-camera-ios" size={30} color={colors["base-content"]} />
+          </View>
+        </Pressable >
+      </View >
+    </View>
   );
 };
 
 const captureStyles = StyleSheet.create({
+  container: {
+    width: width,
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100%",
+    paddingBottom: 10,
+  },
+  modeToggleContainer: {
+    flexDirection: "row",
+    backgroundColor: "rgba(0,0,0,0.3)",
+    borderRadius: 20,
+    padding: 4,
+    marginBottom: 10,
+    gap: 10,
+  },
+  modeButton: {
+    paddingHorizontal: 15,
+    paddingVertical: 4,
+    borderRadius: 15,
+  },
   buttonRow: {
     flexDirection: "row",
     width: width,
     justifyContent: "space-around",
     alignItems: "center",
     paddingHorizontal: 8,
-    height: "100%",
   },
   buttonArea: {
     flex: 1,
@@ -120,16 +175,6 @@ const captureStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  recordingButton: {
-    borderColor: "#ff3b30",
-    borderWidth: 5,
-  },
-  recordingDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#ff3b30",
-  },
   captureWrapper: {
     width: 77,
     height: 77,
@@ -142,12 +187,10 @@ const captureStyles = StyleSheet.create({
     height: 90,
     borderRadius: 45,
     borderWidth: 4,
-    borderColor: "rgba(255,255,255,0.4)",
   },
   outerRingRecording: {
-    borderColor: "#ffffffff",
+    borderColor: "#ffff", // fixed to 4 chars for white or use colors
     opacity: 0.8,
     transform: [{ scale: 1.1 }],
   },
 });
-

@@ -25,6 +25,8 @@ interface ActionControlsProps {
   onCustomAction: () => void;
   isRecording: boolean;
   isSending?: boolean;
+  mode: "picture" | "video";
+  onModeChange: (mode: "picture" | "video") => void;
 }
 
 export const ActionControls: React.FC<ActionControlsProps> = ({
@@ -39,6 +41,8 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
   onCustomAction,
   isRecording,
   isSending = false,
+  mode,
+  onModeChange,
 }) => {
   // Animated styles for smooth transitions
   const controlsAnimatedStyle = useAnimatedStyle(() => {
@@ -78,9 +82,9 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
   return (
     <View style={actionStyles.container}>
       {/* Media Controls - Hiển thị khi đã có media */}
-      <Animated.View 
+      <Animated.View
         style={[
-          actionStyles.controlsWrapper, 
+          actionStyles.controlsWrapper,
           controlsAnimatedStyle,
           { pointerEvents: hasMedia ? "auto" : "none" }
         ]}
@@ -94,9 +98,9 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
       </Animated.View>
 
       {/* Media Capture - Hiển thị khi chưa có media */}
-      <Animated.View 
+      <Animated.View
         style={[
-          actionStyles.controlsWrapper, 
+          actionStyles.controlsWrapper,
           captureAnimatedStyle,
           { pointerEvents: !hasMedia ? "auto" : "none" }
         ]}
@@ -108,6 +112,8 @@ export const ActionControls: React.FC<ActionControlsProps> = ({
           onFlipCamera={onFlipCamera}
           onOpenGallery={onOpenGallery}
           isRecording={isRecording}
+          mode={mode}
+          onModeChange={onModeChange}
         />
       </Animated.View>
     </View>
