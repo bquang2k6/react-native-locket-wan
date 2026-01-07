@@ -142,6 +142,7 @@ export const API_URL = {
   INFO_REACTION_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/reactinfoMomentV3`)),
   GET_MOMENTV2_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/getPost`)),
   GET_LATEST_MOMENT: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/getLatestMomentV2`)),
+  DELETE_MOMENT_V2: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/deleteMomentV2`)),
 
   // Rollcall
   ROLLCALL_POSTS: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/getRollcallPosts`)),
@@ -156,7 +157,6 @@ export const API_URL = {
   GET_All_MESSAGE_WITH_USER: new DynamicUrl(() => createChatApiUrlString(`${LOCKET_URL}/getMessageWithUserV2`)),
   MARK_AS_READ: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/markAsRead`)),
   SEND_CHAT_MESSAGE_REACTION: new DynamicUrl(() => createChatApiUrlString(`${LOCKET_URL}/sendChatMessageReaction`)),
-  DELETE_MOMENT_V2: new DynamicUrl(() => createApiUrlString(`${LOCKET_URL}/deleteMomentV2`)),
 
   // Pro
   GET_LASTEST_URL: new DynamicUrl(() => createApiUrlString(`${LOCKET_PRO}/getmoment`)),

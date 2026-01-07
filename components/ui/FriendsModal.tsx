@@ -14,6 +14,7 @@ import { Image } from "expo-image";
 import { Search, RotateCcw, X, UserPlus, Trash2, Plus } from "lucide-react-native";
 import { fetchFriends, Friend } from "@/hooks/services/friendsService";
 import { ThemedText } from "@/components/themed-text";
+import { useTheme } from '@/context/ThemeContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
@@ -28,6 +29,7 @@ export default function FriendsModal({ isVisible, onClose, onRefresh }: FriendsM
     const [loading, setLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const { colors } = useTheme();
 
     const loadFriends = async (force: boolean = false) => {
         setLoading(true);
@@ -75,7 +77,7 @@ export default function FriendsModal({ isVisible, onClose, onRefresh }: FriendsM
                     style={styles.avatar}
                 />
                 <View>
-                    <ThemedText style={styles.friendName}>
+                    <ThemedText style={[styles.friendName, { color: colors["base-content"] }]}>
                         {item.firstName} {item.lastName}
                     </ThemedText>
                     <ThemedText style={styles.username}>@{item.username}</ThemedText>
@@ -93,7 +95,7 @@ export default function FriendsModal({ isVisible, onClose, onRefresh }: FriendsM
         >
             <View style={styles.overlay}>
                 <Pressable style={styles.dismissArea} onPress={onClose} />
-                <View style={styles.content}>
+                <View style={[styles.content, { backgroundColor: colors["base-100"], borderColor: colors["neutral"] }]}>
                     <View style={styles.dragHandle} />
 
                     <View style={styles.header}>
@@ -105,7 +107,7 @@ export default function FriendsModal({ isVisible, onClose, onRefresh }: FriendsM
                         </TouchableOpacity>
                     </View>
 
-                    <View style={styles.searchContainer}>
+                    <View style={[styles.searchContainer, { backgroundColor: colors["base-200"] }]}>
                         <Search color="#999" size={20} style={styles.searchIcon} />
                         <TextInput
                             style={styles.searchInput}
@@ -174,6 +176,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 32,
         paddingHorizontal: 20,
         paddingTop: 10,
+        borderColor: "black",
+        borderTopWidth: 3,
     },
     dragHandle: {
         width: 40,

@@ -18,6 +18,7 @@ import { X, Palette, Plus } from "lucide-react-native";
 import axios from "axios";
 import Constants from "expo-constants";
 import { LinearGradient } from "expo-linear-gradient";
+import { useTheme } from "@/context/ThemeContext";
 
 // Sub-components
 import ThemesCustomes from "./ThemesCustomes";
@@ -88,13 +89,14 @@ export const CustomStudioModal: React.FC<CustomStudioModalProps> = ({
         image_icon: [],
         image_gif: [],
     });
+    const { colors } = useTheme();
     const [isLoading, setIsLoading] = useState(false);
     const [showGifModal, setShowGifModal] = useState(false);
 
     // GIF Selection State
     const [selectedGif, setSelectedGif] = useState<string | null>(null);
-    const [bgColor, setBgColor] = useState("#000000ff");
-    const [colorBottom, setColorBottom] = useState("#000000");
+    const [bgColor, setBgColor] = useState<string>();
+    const [colorBottom, setColorBottom] = useState<string>();
     const [captionText, setCaptionText] = useState("");
     const [textColor, setTextColor] = useState("#FFFFFF");
 
@@ -191,7 +193,7 @@ export const CustomStudioModal: React.FC<CustomStudioModalProps> = ({
         >
             <View style={styles.modalOverlay}>
                 <Pressable style={styles.backdrop} onPress={onClose} />
-                <View style={styles.modalContent}>
+                <View style={[styles.modalContent, { backgroundColor: colors["base-100"] }]}>
                     {/* Header */}
                     <View style={styles.header}>
                         <View style={styles.headerTitleContainer}>
@@ -205,7 +207,7 @@ export const CustomStudioModal: React.FC<CustomStudioModalProps> = ({
 
                     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                         {isLoading ? (
-                            <View style={styles.loadingContainer}>
+                            <View style={[styles.loadingContainer, { color: colors["base-content"] }]}>
                                 <ActivityIndicator size="large" color="#ff5a5f" />
                                 <Text style={styles.loadingText}>Đang tải themes...</Text>
                             </View>
@@ -267,17 +269,17 @@ export const CustomStudioModal: React.FC<CustomStudioModalProps> = ({
                 onRequestClose={() => setShowGifModal(false)}
             >
                 <View style={styles.gifModalOverlay}>
-                    <View style={styles.gifModalContent}>
+                    <View style={[styles.gifModalContent, { backgroundColor: colors["base-100"] }]}>
                         <View style={styles.gifHeader}>
-                            <Text style={styles.gifTitle}>Chọn GIF</Text>
+                            <Text style={[styles.gifTitle, { color: colors["base-content"] }]}>Chọn GIF</Text>
                             <TouchableOpacity onPress={() => setShowGifModal(false)}>
                                 <X color="#cecece" size={24} />
                             </TouchableOpacity>
                         </View>
 
                         <ScrollView contentContainerStyle={styles.gifScrollContent}>
-                            <Text style={styles.sectionTitle}>Thư viện GIF</Text>
-                            <View style={styles.gifGrid}>
+                            <Text style={[styles.sectionTitle, { color: colors["base-content"] }]}>Thư viện GIF</Text>
+                            <View style={[styles.gifGrid, { backgroundColor: colors["base-200"] }]}>
                                 {gifList.map((gif, idx) => (
                                     <TouchableOpacity
                                         key={idx}
@@ -292,56 +294,60 @@ export const CustomStudioModal: React.FC<CustomStudioModalProps> = ({
                                 ))}
                             </View>
 
-                            <Text style={styles.sectionTitle}>Tùy chỉnh</Text>
-                            <View style={styles.customizationRow}>
+                            <Text style={[styles.sectionTitle, { color: colors["base-content"] }]}>Tùy chỉnh</Text>
+                            {/* <View style={styles.customizationRow}>
                                 <View style={styles.colorInputContainer}>
-                                    <Text style={styles.label}>Màu nền trên:</Text>
+                                    <Text style={[styles.label, { color: colors["base-content"] }]}>Màu nền trên:</Text>
                                     <TextInput
                                         style={styles.textInput}
                                         value={bgColor}
                                         onChangeText={setBgColor}
                                         placeholder=""
                                         placeholderTextColor="#666"
+                                        backgroundColor={colors["base-200"]}
                                     />
                                 </View>
                                 <View style={styles.colorInputContainer}>
-                                    <Text style={styles.label}>Màu nền dưới:</Text>
+                                    <Text style={[styles.label, { color: colors["base-content"] }]}>Màu nền dưới:</Text>
                                     <TextInput
                                         style={styles.textInput}
                                         value={colorBottom}
                                         onChangeText={setColorBottom}
                                         placeholder=""
                                         placeholderTextColor="#666"
+                                        backgroundColor={colors["base-200"]}
                                     />
                                 </View>
-                            </View>
+                            </View> */}
 
                             <View style={styles.inputContainer}>
-                                <Text style={styles.label}>Caption:</Text>
+                                <Text style={[styles.label, { color: colors["base-content"] }]}>Caption:</Text>
                                 <TextInput
                                     style={styles.textInput}
                                     value={captionText}
                                     onChangeText={setCaptionText}
                                     placeholder="Nhập caption..."
                                     placeholderTextColor="#666"
+                                    backgroundColor={colors["base-200"]}
                                 />
                             </View>
 
                             <View style={styles.colorInputContainer}>
-                                <Text style={styles.label}>Màu chữ:</Text>
+                                <Text style={[styles.label, { color: colors["base-content"] }]}>Màu chữ:</Text>
                                 <TextInput
                                     style={styles.textInput}
                                     value={textColor}
                                     onChangeText={setTextColor}
                                     placeholder="#FFFFFF"
                                     placeholderTextColor="#666"
+                                    backgroundColor={colors["base-200"]}
                                 />
                             </View>
 
                             {/* Preview */}
                             <View style={styles.previewContainer}>
                                 <LinearGradient
-                                    colors={[bgColor, colorBottom]}
+                                    colors={[bgColor ?? "transparent", colorBottom ?? bgColor ?? "transparent",]}
                                     style={styles.previewBox}
                                 >
                                     {selectedGif && (
@@ -489,9 +495,9 @@ const styles = StyleSheet.create({
         borderRadius: 10,
     },
     gifItem: {
-        width: (SCREEN_WIDTH * 0.9 - 80) / 4,
+        width: (SCREEN_WIDTH * 0.8 - 65) / 4,
         aspectRatio: 1,
-        borderRadius: 5,
+        borderRadius: 10,
         overflow: "hidden",
         borderWidth: 2,
         borderColor: "transparent",
@@ -535,17 +541,18 @@ const styles = StyleSheet.create({
         gap: 15,
     },
     previewBox: {
-        width: 150,
+        width: 200,
         height: 45,
         borderRadius: 22,
         flexDirection: "row",
         alignItems: "center",
         paddingHorizontal: 15,
         overflow: "hidden",
+        borderWidth: 1,
     },
     previewGif: {
-        width: 24,
-        height: 24,
+        width: 30,
+        height: 30,
         borderRadius: 4,
         marginRight: 10,
     },
