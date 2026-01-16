@@ -13,8 +13,8 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Listmsg from './components/Listmsg';
-import SocketStatus from './components/SocketStatus';
+import Listmsg from '@/components/MessageTab/Listmsg';
+import SocketStatus from '@/components/MessageTab/SocketStatus';
 import {
   GetAllMessage,
   getMessagesWithUser,

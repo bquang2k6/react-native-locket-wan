@@ -38,7 +38,7 @@ export default function HomePage({ goToPage, setIsOnRollcall }: ProfileScreenPro
   };
 
   return (
-    <View style={[styles.homeContainer, { backgroundColor: colors["base-100"] }]}>
+    <View style={[styles.homeContainer, { backgroundColor: colors["base-300"] }]}>
       {/* Header cố định - Hide on rollcall */}
       {currentPage !== "rollcall" && (
         <HomeHeader

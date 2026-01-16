@@ -29,11 +29,11 @@ import ViewShot, { captureRef } from "react-native-view-shot";
 
 
 // Import components
-import { ActionControls } from "./components/ActionControls";
-import { MediaSizeInfo } from "./components/MediaSizeInfo";
-import AutoResizeCaption from "./components/AutoResizeCaption";
-import Streak from "../../../components/Streak";
-import { CustomStudioModal, PostOverlay } from "./components/CustomStudio/CustomStudioModal";
+import { ActionControls } from "@/components/HomeTab/ActionControls";
+import { MediaSizeInfo } from "@/components/HomeTab/MediaSizeInfo";
+import AutoResizeCaption from "@/components/HomeTab/AutoResizeCaption";
+import Streak from "@/components/Streak";
+import { CustomStudioModal, PostOverlay } from "@/components/HomeTab/CustomStudio/CustomStudioModal";
 
 import { uploadMedia } from "@/hooks/services/uploadMedia";
 import { UploadQueue } from "@/hooks/services/UploadQueue";
@@ -156,8 +156,8 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
   const [streakRefresh, setStreakRefresh] = useState(0);
   const { colors } = useTheme();
 
-  const userStopTimeRef = useRef(null);
-  const recordStartTimeRef = useRef(null);
+  const userStopTimeRef = useRef<number | null>(null);
+  const recordStartTimeRef = useRef<number | null>(null);
   const [uiRecording, setUiRecording] = useState(false);
   const isStoppingRef = useRef(false);
   const [postOverlay, setPostOverlay] = useState<PostOverlay>({
@@ -293,6 +293,7 @@ export default function MainHomeTab({ goToPage }: MainHomeTabProps) {
     isStoppingRef.current = true;
 
     const MIN_RECORD_MS = 2500;
+    if (!recordStartTimeRef.current) return;
     const elapsed = Date.now() - recordStartTimeRef.current;
 
     if (elapsed < MIN_RECORD_MS) {

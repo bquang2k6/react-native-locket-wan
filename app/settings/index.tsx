@@ -1,20 +1,32 @@
 // App.js
 import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, Button, StyleSheet, Alert, Pressable, ActivityIndicator } from 'react-native';
+import { RefreshCw } from "lucide-react-native";
+import { useExpoUpdate } from "../../hooks/useExpoUpdate";
+import { useTheme } from "@/context/ThemeContext";
 
-export default function App() {
-    const [count, setCount] = useState(0);
+export default function Settings() {
+    const { isChecking, isDownloading, checkForUpdates } = useExpoUpdate();
 
-    const handlePress = () => {
-        setCount(count + 1);
-        Alert.alert('Bạn đã nhấn nút!', `Số lần nhấn: ${count + 1}`);
-    };
+    const loading = isChecking || isDownloading;
+    const { colors } = useTheme();
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Chào mừng đến với React Native!</Text>
-            <Button title="Nhấn tôi" onPress={handlePress} />
-            <Text style={styles.counter}>Số lần nhấn: {count}</Text>
+        <View style={[styles.container, { backgroundColor: colors["base-100"] }]}>
+            <Pressable
+                style={styles.updateBtn}
+                disabled={loading}
+                onPress={() => checkForUpdates(true)}
+            >
+                {loading ? (
+                    <ActivityIndicator color="#fff" />
+                ) : (
+                    <>
+                        <RefreshCw size={16} color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={styles.updateText}>Kiểm tra cập nhật</Text>
+                    </>
+                )}
+            </Pressable>
         </View>
     );
 }
@@ -22,17 +34,20 @@ export default function App() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f0f8ff',
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#fdf2f8",
     },
-    title: {
-        fontSize: 24,
-        marginBottom: 20,
+    updateBtn: {
+        backgroundColor: "#7c3aed",
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        borderRadius: 999,
+        flexDirection: "row",
+        alignItems: "center",
     },
-    counter: {
-        marginTop: 20,
-        fontSize: 18,
-        color: '#333',
+    updateText: {
+        color: "#fff",
+        fontWeight: "600",
     },
 });

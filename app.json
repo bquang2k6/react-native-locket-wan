@@ -16,9 +16,7 @@
         "NSCameraUsageDescription": "Ứng dụng cần camera để chụp ảnh và quay video",
         "NSMicrophoneUsageDescription": "Ứng dụng không ghi âm, chỉ dùng để quay video"
       },
-      "runtimeVersion": {
-        "policy": "appVersion"
-      }
+      "runtimeVersion": "1.0.0"
     },
     "android": {
       "package": "com.quang2k6.locketwan",
@@ -80,7 +78,11 @@
     },
     "owner": "wantech",
     "updates": {
-      "url": "https://u.expo.dev/1d35bd34-381a-4ae8-8185-efb493676bc7"
+      "url": "https://u.expo.dev/1d35bd34-381a-4ae8-8185-efb493676bc7",
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0,
+      "enabled": true,
+      "channel": "production"
     }
   }
 }

@@ -7,9 +7,19 @@ import {
 } from "@react-navigation/native";
 import { StatusBar } from "expo-status-bar";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
+import { useExpoUpdate } from "@/hooks/useExpoUpdate";
+import { useEffect } from "react";
+
 
 function RootLayoutNav() {
   const { themeName, colors } = useTheme();
+  const { checkForUpdates } = useExpoUpdate();
+
+  useEffect(() => {
+    // Tự động kiểm tra cập nhật khi vào app (chỉ chạy trong bản build)
+    checkForUpdates();
+  }, []);
+
 
   // Create a React Navigation theme based on our selected theme colors
   const navTheme: Theme = {
